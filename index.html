@@ -2,60 +2,32 @@
 <html>
 <head>
     <title>DeepYouMap</title>
+    <!-- Подключаем библиотеку карт -->
     <script src='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'></script>
     <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet' />
     <style>
         body { margin: 0; padding: 0; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #map { width: 100%; height: 100vh; }
     </style>
 </head>
 <body>
+    <!-- Контейнер для карты -->
     <div id="map"></div>
-    <script>
-        // Ваши данные GeoJSON (можно вынести в отдельный файл)
-        const frontlineGeoJSON = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": { "name": "Линия фронта" },
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": [
-                            [30.52, 50.45], // Киев
-                            [31.00, 49.00]   // Днепр
-                        ]
-                    }
-                }
-            ]
-        };
 
-        // Инициализация карты с вашим стилем MapTiler
+    <script>
+        // Ваш стиль MapTiler
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
-            center: [31.1656, 48.3794], // Центр (Украина)
-            zoom: 6
+            center: [31.1656, 48.3794],  // Центр карты (Украина)
+            zoom: 6                      // Масштаб
         });
 
-        // Добавление слоя с линией фронта
-        map.on('load', () => {
-            map.addSource('frontline', {
-                type: 'geojson',
-                data: frontlineGeoJSON
-            });
-            
-            map.addLayer({
-                id: 'frontline-layer',
-                type: 'line',
-                source: 'frontline',
-                paint: {
-                    'line-color': '#ff0000',
-                    'line-width': 3,
-                    'line-dasharray': [2, 2]
-                }
-            });
-        });
+        // Добавляем маркер (пример)
+        new maplibregl.Marker({ color: 'red' })
+            .setLngLat([30.52, 50.45])  // Координаты Киева
+            .setPopup(new maplibregl.Popup().setText('Киев'))
+            .addTo(map);
     </script>
 </body>
 </html>
