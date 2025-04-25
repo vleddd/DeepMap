@@ -1,23 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Карта с расчетом площади</title>
+    <title>Полная карта DeepYouMap</title>
     <script src='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'></script>
-    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script> <!-- Библиотека для расчетов -->
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
     <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet'>
     <style>
         body { margin:0; padding:0; }
         #map { width:100%; height:100vh; }
         .mapboxgl-popup-content {
             padding: 15px;
-            min-width: 200px;
+            min-width: 250px;
             font-family: Arial, sans-serif;
+            border-radius: 5px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
         }
-        .area-info {
-            margin-top: 10px;
-            padding: 8px;
-            background: #f5f5f5;
-            border-radius: 4px;
+        .mapboxgl-popup-content h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .mapboxgl-popup-content table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .mapboxgl-popup-content td {
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .mapboxgl-popup-content tr:last-child td {
+            border-bottom: none;
         }
     </style>
 </head>
@@ -25,79 +38,145 @@
     <div id="map"></div>
 
     <script>
+        // 1. Инициализация карты с вашим стилем
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/streets/style.json?key=YOUR_KEY',
-            center: [30, 50],
+            style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
+            center: [31.1656, 48.3794],
             zoom: 6
         });
 
-        // Функция для форматирования площади
+        // 2. Функция для форматирования площади
         function formatArea(area) {
-            // Конвертируем кв.метры в кв.километры
-            const areaKm2 = area / 1000000; 
-            // Форматируем с разделителями тысяч
+            const areaKm2 = area / 1000000;
             return areaKm2.toLocaleString('ru-RU', {maximumFractionDigits: 2}) + ' км²';
         }
 
+        // 3. Загрузка карты и данных
         map.on('load', () => {
-            // Добавляем тестовый полигон (замените своими данными)
-            map.addSource('polygons', {
+            // Добавляем тестовые данные (ЗАМЕНИТЕ НА СВОИ)
+            map.addSource('war-data', {
                 type: 'geojson',
                 data: {
-                    type: 'FeatureCollection',
-                    features: [{
-                        type: 'Feature',
-                        properties: { name: 'CADR and CALR Zone' },
-                        geometry: {
-                            type: 'Polygon',
-                            coordinates: [[
-                                [30.0, 50.0],
-                                [30.5, 50.0],
-                                [30.5, 49.5],
-                                [30.0, 49.5],
-                                [30.0, 50.0]
-                            ]]
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "properties": {
+                                "name": "CADR and CALR",
+                                "type": "Особый район",
+                                "status": "активный"
+                            },
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": [[
+                                    [30.0, 50.0], [30.5, 50.0], 
+                                    [30.5, 49.5], [30.0, 49.5], 
+                                    [30.0, 50.0]
+                                ]]
+                            }
+                        },
+                        {
+                            "type": "Feature",
+                            "properties": {
+                                "name": "Линия фронта",
+                                "type": "фронт"
+                            },
+                            "geometry": {
+                                "type": "LineString",
+                                "coordinates": [
+                                    [30.52, 50.45], [31.00, 49.00]
+                                ]
+                            }
                         }
-                    }]
+                    ]
                 }
             });
 
+            // Слой полигонов
             map.addLayer({
                 id: 'polygons-fill',
                 type: 'fill',
-                source: 'polygons',
+                source: 'war-data',
                 paint: {
-                    'fill-color': '#3a7dff',
-                    'fill-opacity': 0.5,
-                    'fill-outline-color': '#0a4fd9'
-                }
+                    'fill-color': '#d22b2b',
+                    'fill-opacity': 0.25,
+                    'fill-outline-color': '#a31212'
+                },
+                filter: ['==', '$type', 'Polygon']
             });
 
-            // Обработчик клика с расчетом площади
+            // Слой линий
+            map.addLayer({
+                id: 'frontlines',
+                type: 'line',
+                source: 'war-data',
+                paint: {
+                    'line-color': '#ff3a3a',
+                    'line-width': 3,
+                    'line-opacity': 0.8,
+                    'line-dasharray': [3, 2]
+                },
+                filter: ['==', '$type', 'LineString']
+            });
+
+            // Обработчик клика на полигоны
             map.on('click', 'polygons-fill', (e) => {
                 const feature = e.features[0];
-                const area = turf.area(feature); // Расчет площади в кв.метрах
+                const area = turf.area(feature);
                 
+                let popupContent = `<h3>${feature.properties.name}</h3><table>`;
+                
+                // Добавляем все свойства в таблицу
+                for (const [key, value] of Object.entries(feature.properties)) {
+                    popupContent += `
+                        <tr>
+                            <td><strong>${key}:</strong></td>
+                            <td>${value}</td>
+                        </tr>`;
+                }
+                
+                // Добавляем рассчитанную площадь
+                popupContent += `
+                        <tr>
+                            <td><strong>Площадь:</strong></td>
+                            <td>${formatArea(area)}</td>
+                        </tr>
+                    </table>`;
+
+                new maplibregl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupContent)
+                    .addTo(map);
+            });
+
+            // Обработчик клика на линии
+            map.on('click', 'frontlines', (e) => {
                 new maplibregl.Popup()
                     .setLngLat(e.lngLat)
                     .setHTML(`
-                        <h3>${feature.properties.name}</h3>
-                        <div class="area-info">
-                            <strong>Площадь:</strong> ${formatArea(area)}
-                        </div>
-                        ${feature.properties.description || ''}
+                        <h3>${e.features[0].properties.name}</h3>
+                        <p>Тип: ${e.features[0].properties.type}</p>
                     `)
                     .addTo(map);
             });
 
             // Изменение курсора
-            map.on('mouseenter', 'polygons-fill', () => {
+            map.on('mouseenter', ['polygons-fill', 'frontlines'], () => {
                 map.getCanvas().style.cursor = 'pointer';
             });
-            map.on('mouseleave', 'polygons-fill', () => {
+            map.on('mouseleave', ['polygons-fill', 'frontlines'], () => {
                 map.getCanvas().style.cursor = '';
             });
+
+            // Добавляем маркер (пример)
+            new maplibregl.Marker({ color: '#3a7dff' })
+                .setLngLat([30.52, 50.45])
+                .setPopup(new maplibregl.Popup().setHTML(`
+                    <h3>Киев</h3>
+                    <p>Контролируется Украиной</p>
+                `))
+                .addTo(map);
         });
     </script>
 </body>
