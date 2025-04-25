@@ -95,38 +95,46 @@
             });
 
             // Обработчик клика на объекты
-            map.on('click', ['polygons-layer', 'frontlines-layer'], (e) => {
-                const feature = e.features[0];
-                let popupContent = `<h3>${feature.properties.name || 'Объект'}</h3><table>`;
-                
-                // Добавляем все свойства
-                for (const [key, value] of Object.entries(feature.properties)) {
-                    if(key !== 'name') { // Исключаем дублирование названия
-                        popupContent += `
-                            <tr>
-                                <td>${key}:</td>
-                                <td>${value || 'нет данных'}</td>
-                            </tr>`;
-                    }
-                }
-                
-                // Для полигонов добавляем площадь
-                if(feature.geometry.type === 'Polygon') {
-                    const area = turf.area(feature);
-                    popupContent += `
-                            <tr>
-                                <td>Площадь:</td>
-                                <td>${formatArea(area)}</td>
-                            </tr>`;
-                }
-                
-                popupContent += `</table>`;
+          map.on('click', ['polygons-layer', 'frontlines-layer'], (e) => {
+    const feature = e.features[0];
 
-                new maplibregl.Popup()
-                    .setLngLat(e.lngLat)
-                    .setHTML(popupContent)
-                    .addTo(map);
-            });
+    let popupContent = `
+        <div>
+            <h3>${feature.properties.name || 'Объект'}</h3>
+            <table>
+    `;
+
+    // Если это полигон, добавляем расчёт площади
+    if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+        const area = turf.area(feature); // в м²
+        const areaKm2 = (area / 1e6).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        popupContent += `
+            <tr>
+                <td>Площадь:</td>
+                <td>${areaKm2} км²</td>
+            </tr>
+        `;
+    }
+
+    // Выводим все остальные свойства, кроме 'name'
+    for (const [key, value] of Object.entries(feature.properties)) {
+        if (key !== 'name' && value) {
+            popupContent += `
+                <tr>
+                    <td>${key}:</td>
+                    <td>${value}</td>
+                </tr>
+            `;
+        }
+    }
+
+    popupContent += `</table></div>`;
+
+    new maplibregl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(popupContent)
+        .addTo(map);
+});
 
             // Изменение курсора
             map.on('mouseenter', ['polygons-layer', 'frontlines-layer'], () => {
