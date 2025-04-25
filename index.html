@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DeepYouMap</title>
-    <!-- Подключаем библиотеку карт -->
+    <title>DeepYouMap с данными MapTiler</title>
     <script src='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'></script>
     <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet' />
     <style>
@@ -11,22 +10,41 @@
     </style>
 </head>
 <body>
-    <!-- Контейнер для карты -->
     <div id="map"></div>
 
     <script>
-        // Ваш стиль MapTiler
+        // 1. Инициализация карты с вашим стилем
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
-            center: [31.1656, 48.3794],  // Центр карты (Украина)
-            zoom: 6                      // Масштаб
+            center: [31.1656, 48.3794],
+            zoom: 6
         });
 
-        // Добавляем маркер (пример)
-        new maplibregl.Marker({ color: 'red' })
-            .setLngLat([30.52, 50.45])  // Координаты Киева
-            .setPopup(new maplibregl.Popup().setText('Киев'))
+        // 2. Загрузка ВАШИХ данных (GeoJSON) из MapTiler
+        map.on('load', () => {
+            // Добавляем источник данных
+            map.addSource('my-custom-data', {
+                type: 'geojson',
+                data: 'https://api.maptiler.com/data/01966d36-bb63-7afa-b59f-a38d3e5107b9/features.json?key=A7YSMrQ3OZ0oStEWILkD'
+            });
+
+            // Добавляем слой с вашими данными
+            map.addLayer({
+                id: 'custom-layer',
+                type: 'fill', // или 'line', 'circle' в зависимости от типа данных
+                source: 'my-custom-data',
+                paint: {
+                    'fill-color': '#ff0000',
+                    'fill-opacity': 0.5
+                }
+            });
+        });
+
+        // 3. Добавляем маркер (пример)
+        new maplibregl.Marker({ color: 'blue' })
+            .setLngLat([30.52, 50.45])
+            .setPopup(new maplibregl.Popup().setText('Пример маркера'))
             .addTo(map);
     </script>
 </body>
