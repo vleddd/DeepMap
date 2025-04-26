@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>DeepYouMap - Календарь и автообновление</title>
+    <title>DeepYouMap - Карта с Календарём и Событиями</title>
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
@@ -10,26 +10,66 @@
         body { margin:0; padding:0; }
         #map { width:100%; height:100vh; }
 
-        /* Панель даты */
+        /* Панель календаря */
         #date-panel {
             position: absolute;
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.9);
-            padding: 8px 12px;
-            border-radius: 8px;
-            z-index: 2;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 16px;
+            border-radius: 10px;
             display: flex;
-            gap: 8px;
             align-items: center;
+            gap: 15px;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-family: Arial, sans-serif;
         }
-        #date-picker {
-            padding: 6px 10px;
-            font-size: 14px;
-            border: 1px solid #ccc;
+        .date-button {
+            font-size: 20px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        #current-date {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Колокольчик */
+        #notifications {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        #notifications-panel {
+            display: none;
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-family: Arial, sans-serif;
+        }
+        .event-card {
+            background: #f1f1f1;
+            padding: 8px;
+            margin-bottom: 8px;
             border-radius: 6px;
+            font-size: 14px;
+        }
+        .event-time {
+            font-weight: bold;
+            color: #555;
         }
 
         /* Попап */
@@ -53,13 +93,12 @@
         }
         .war-info-table {
             width: 100%;
-            border-collapse: collapse;
             font-size: 14px;
+            border-collapse: collapse;
         }
         .war-info-table td {
             padding: 6px 0;
             border-bottom: 1px solid #3a3a3a;
-            vertical-align: top;
         }
         .war-info-table tr:last-child td {
             border-bottom: none;
@@ -67,147 +106,179 @@
         .war-info-table td:first-child {
             color: #aaa;
             width: 40%;
-            padding-right: 10px;
         }
     </style>
 </head>
 <body>
 
-<!-- Панель выбора даты -->
+<!-- Календарик -->
 <div id="date-panel">
-    <label for="date-picker">Выбрать дату:</label>
-    <input type="date" id="date-picker" />
+    <button class="date-button" id="prev">&lt;</button>
+    <span id="current-date"></span>
+    <button class="date-button" id="next">&gt;</button>
 </div>
+
+<!-- Колокольчик -->
+<div id="notifications">🔔</div>
+<div id="notifications-panel"></div>
 
 <!-- Карта -->
 <div id="map"></div>
 
 <script>
-    const map = new maplibregl.Map({
-        container: 'map',
-        style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
-        center: [31.1656, 48.3794],
-        zoom: 6
-    });
+const map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
+    center: [31.1656, 48.3794],
+    zoom: 6
+});
 
-    let currentDate = null;
-    let currentSourceId = "war-zones";
-    let updateInterval = null;
-    const baseUrl = "https://vleddd.github.io/DeepYouMap/maps/";
+const unknownIds = [
+    "c23197d4-9c04-4c88-831c-98ca30f6b716",
+    "1cb055fe-e90a-4dfe-883a-eba21d440659",
+    "fc58ba17-3dae-4bbc-9d5f-c62c3ed676ac"
+];
 
-    function formatArea(area) {
-        return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
-    }
+const idToName = {
+    "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
+    "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
+};
 
-    async function loadMapData(dateString) {
-        try {
-            const url = `${baseUrl}map_${dateString}.geojson`;
+// Список доступных дат + времён
+const availableDates = [
+    "2022-02-23_00-00",
+    "2022-02-24_04-00",
+    "2022-02-24_09-00"
+];
 
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error("Файл не найден");
+const events = {
+    "2022-02-24": [
+        { time: "09:00", text: "Враг продвинулся к городу X" },
+        { time: "04:00", text: "Началось наступление в районе Y" }
+    ]
+};
+
+let currentIndex = 0;
+
+function formatArea(area) {
+    return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
+}
+
+async function loadMap(dateStr) {
+    const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
+    try {
+        const response = await fetch(url);
+        const geojson = await response.json();
+
+        geojson.features.forEach(feature => {
+            const featureId = feature.id || feature.properties.id || feature.properties.featureId;
+            if (idToName[featureId]) {
+                feature.properties.customName = idToName[featureId];
+                feature.properties.fillColor = "#b57edc"; // фиолетовый
+            } else if (unknownIds.includes(featureId)) {
+                feature.properties.customName = "(неизвестно)";
+                feature.properties.fillColor = "#777777"; // серый
+            } else {
+                feature.properties.customName = "(неизвестно)";
+                feature.properties.fillColor = "#777777";
             }
-            const geojson = await response.json();
+            feature.properties.areaFormatted = formatArea(turf.area(feature));
+        });
 
-            const idToName = {
-                "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
-                "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
-            };
-
-            geojson.features.forEach(feature => {
-                const featureId = feature.id || feature.properties.id || feature.properties.featureId;
-                if (idToName[featureId]) {
-                    feature.properties.customName = idToName[featureId];
-                }
-                if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-                    feature.properties.calculatedArea = formatArea(turf.area(feature));
-                }
-            });
-
-            if (map.getSource(currentSourceId)) {
-                map.removeLayer('war-polygons-fill');
-                map.removeLayer('war-polygons-outline');
-                map.removeSource(currentSourceId);
-            }
-
-            map.addSource(currentSourceId, {
-                type: 'geojson',
-                data: geojson
-            });
+        if (map.getSource('war-zones')) {
+            map.getSource('war-zones').setData(geojson);
+        } else {
+            map.addSource('war-zones', { type: 'geojson', data: geojson });
 
             map.addLayer({
-                id: 'war-polygons-fill',
+                id: 'war-polygons',
                 type: 'fill',
-                source: currentSourceId,
+                source: 'war-zones',
                 paint: {
-                    'fill-color': '#b57edc',
-                    'fill-opacity': 0.4
+                    'fill-color': ['get', 'fillColor'],
+                    'fill-opacity': 0.5,
+                    'fill-outline-color': '#a31212'
                 },
                 filter: ['==', '$type', 'Polygon']
             });
 
-            map.addLayer({
-                id: 'war-polygons-outline',
-                type: 'line',
-                source: currentSourceId,
-                paint: {
-                    'line-color': '#a26bce',
-                    'line-width': 2,
-                    'line-opacity': 1
-                },
-                filter: ['==', '$type', 'Polygon']
-            });
-
-            map.on('click', 'war-polygons-fill', (e) => {
+            map.on('click', 'war-polygons', (e) => {
                 const feature = e.features[0];
-                const name = feature.properties.customName || feature.properties.name || 'Неизвестный регион';
-                const areaFormatted = feature.properties.calculatedArea || 'Неизвестно';
-
                 const popupHTML = `
-                    <h3>${name}</h3>
+                    <h3>${feature.properties.customName}</h3>
                     <table class="war-info-table">
-                        <tr>
-                            <td>Площадь:</td>
-                            <td>${areaFormatted}</td>
-                        </tr>
+                        <tr><td>Площадь:</td><td>${feature.properties.areaFormatted}</td></tr>
                     </table>
                 `;
-
                 new maplibregl.Popup()
                     .setLngLat(e.lngLat)
                     .setHTML(popupHTML)
                     .addTo(map);
             });
 
-            map.on('mouseenter', 'war-polygons-fill', () => {
+            map.on('mouseenter', 'war-polygons', () => {
                 map.getCanvas().style.cursor = 'pointer';
             });
-            map.on('mouseleave', 'war-polygons-fill', () => {
+            map.on('mouseleave', 'war-polygons', () => {
                 map.getCanvas().style.cursor = '';
             });
-
-        } catch (error) {
-            console.error("Ошибка загрузки карты:", error.message);
         }
+    } catch (error) {
+        console.error("Ошибка загрузки карты:", error);
     }
+}
 
-    document.getElementById('date-picker').addEventListener('change', (e) => {
-        const date = new Date(e.target.value);
-        if (!isNaN(date)) {
-            const dateString = date.toISOString().split('T')[0];
-            currentDate = dateString;
-            loadMapData(dateString);
-        }
-    });
+function updateDatePanel() {
+    const [datePart, timePart] = availableDates[currentIndex].split('_');
+    document.getElementById('current-date').textContent = `${datePart} ${timePart.replace('-', ':')}`;
+    loadMap(availableDates[currentIndex]);
+    loadEvents(datePart);
+}
 
-    function checkForUpdates() {
-        if (currentDate) {
-            loadMapData(currentDate);
+function loadEvents(date) {
+    const panel = document.getElementById('notifications-panel');
+    panel.innerHTML = '';
+    if (events[date]) {
+        const sorted = [...events[date]].sort((a, b) => b.time.localeCompare(a.time));
+        for (const ev of sorted) {
+            const div = document.createElement('div');
+            div.className = 'event-card';
+            div.innerHTML = `<div class="event-time">${ev.time}</div><div>${ev.text}</div>`;
+            panel.appendChild(div);
         }
+    } else {
+        panel.innerHTML = '<div>Нет событий на эту дату</div>';
     }
+}
 
-    // Каждые 10 секунд проверяем обновления
-    updateInterval = setInterval(checkForUpdates, 10000);
+document.getElementById('prev').onclick = () => {
+    if (currentIndex > 0) {
+        currentIndex--;
+        updateDatePanel();
+    }
+};
+document.getElementById('next').onclick = () => {
+    if (currentIndex < availableDates.length - 1) {
+        currentIndex++;
+        updateDatePanel();
+    }
+};
+
+document.getElementById('notifications').onclick = () => {
+    const panel = document.getElementById('notifications-panel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+};
+
+// Запускаем
+map.on('load', () => {
+    updateDatePanel();
+});
+
+// Автообновление данных каждые 10 секунд
+setInterval(() => {
+    updateDatePanel();
+}, 10000);
+
 </script>
 
 </body>
