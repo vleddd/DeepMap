@@ -166,8 +166,14 @@ const availableDates = [
     "2022-02-24_04-00",
     "2022-02-24_09-00",
     "2022-02-24_13-00",
-    "2022-02-24_19-00"
+    "2022-02-24_19-00",
+    "2022-02-24_23-00"
 ];
+
+const liberatedIds = [
+    "12e41b8c-34ae-4cc6-9fc2-a7e570d762be"
+];
+
 
 // События
 const events = {
@@ -192,18 +198,22 @@ async function loadMap(dateStr) {
         geojson.features.forEach(feature => {
             const featureId = feature.id || feature.properties.id || feature.properties.featureId;
             if (idToName[featureId]) {
-                feature.properties.customName = idToName[featureId];
-                feature.properties.fillColor = "#b57edc"; // фиолетовый
+            feature.properties.customName = idToName[featureId];
+            feature.properties.fillColor = "#b57edc"; // фиолетовый
             } else if (occupiedIds.includes(featureId)) {
-                feature.properties.customName = "Оккупировано";
-                feature.properties.fillColor = "#d22b2b"; // красный
+            feature.properties.customName = "Оккупировано";
+            feature.properties.fillColor = "#d22b2b"; // красный
+            } else if (liberatedIds.includes(featureId)) {
+            feature.properties.customName = "Освобождено";
+            feature.properties.fillColor = "#3498db"; // синий
             } else if (unknownIds.includes(featureId)) {
-                feature.properties.customName = "неизвестно";
-                feature.properties.fillColor = "#777777"; // серый
+            feature.properties.customName = "(неизвестно)";
+            feature.properties.fillColor = "#777777"; // серый
             } else {
-                feature.properties.customName = "неизвестно";
-                feature.properties.fillColor = "#777777";
+            feature.properties.customName = "(неизвестно)";
+            feature.properties.fillColor = "#777777";
             }
+
             feature.properties.areaFormatted = formatArea(turf.area(feature));
         });
 
