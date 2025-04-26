@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>DeepYouMap - Полигоны и Поиск</title>
+    <title>DeepYouMap - Календарь и автообновление</title>
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
@@ -10,8 +10,8 @@
         body { margin:0; padding:0; }
         #map { width:100%; height:100vh; }
 
-        /* Стили для панели поиска */
-        #search-panel {
+        /* Панель даты */
+        #date-panel {
             position: absolute;
             top: 10px;
             left: 50%;
@@ -19,32 +19,20 @@
             background: rgba(255, 255, 255, 0.9);
             padding: 8px 12px;
             border-radius: 8px;
-            display: flex;
-            gap: 8px;
             z-index: 2;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
-        #search-input {
-            width: 250px;
+        #date-picker {
             padding: 6px 10px;
             font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 6px;
         }
-        #search-button {
-            padding: 6px 12px;
-            font-size: 14px;
-            background: #444;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        #search-button:hover {
-            background: #222;
-        }
 
-        /* Стили для попапа */
+        /* Попап */
         .mapboxgl-popup {
             max-width: 350px !important;
             font-family: 'Arial', sans-serif;
@@ -85,35 +73,40 @@
 </head>
 <body>
 
-<!-- Панель поиска -->
-<div id="search-panel">
-    <input type="text" id="search-input" placeholder="Найти город или поселок..." />
-    <button id="search-button">🔍</button>
+<!-- Панель выбора даты -->
+<div id="date-panel">
+    <label for="date-picker">Выбрать дату:</label>
+    <input type="date" id="date-picker" />
 </div>
 
 <!-- Карта -->
 <div id="map"></div>
 
 <script>
-    let map;
-    let searchMarker = null;
-    let searchBorder = null;
-
-    map = new maplibregl.Map({
+    const map = new maplibregl.Map({
         container: 'map',
         style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
         center: [31.1656, 48.3794],
         zoom: 6
     });
 
+    let currentDate = null;
+    let currentSourceId = "war-zones";
+    let updateInterval = null;
+    const baseUrl = "https://vleddd.github.io/DeepYouMap/maps/";
+
     function formatArea(area) {
         return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
     }
 
-    map.on('load', async () => {
+    async function loadMapData(dateString) {
         try {
-            // Загружаем твои полигоны
-            const response = await fetch('https://api.maptiler.com/data/01966d36-bb63-7afa-b59f-a38d3e5107b9/features.json?key=A7YSMrQ3OZ0oStEWILkD');
+            const url = `${baseUrl}map_${dateString}.geojson`;
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error("Файл не найден");
+            }
             const geojson = await response.json();
 
             const idToName = {
@@ -131,16 +124,21 @@
                 }
             });
 
-            map.addSource('war-zones', {
+            if (map.getSource(currentSourceId)) {
+                map.removeLayer('war-polygons-fill');
+                map.removeLayer('war-polygons-outline');
+                map.removeSource(currentSourceId);
+            }
+
+            map.addSource(currentSourceId, {
                 type: 'geojson',
                 data: geojson
             });
 
-            // Фиолетовая заливка
             map.addLayer({
                 id: 'war-polygons-fill',
                 type: 'fill',
-                source: 'war-zones',
+                source: currentSourceId,
                 paint: {
                     'fill-color': '#b57edc',
                     'fill-opacity': 0.4
@@ -148,11 +146,10 @@
                 filter: ['==', '$type', 'Polygon']
             });
 
-            // Обводка
             map.addLayer({
                 id: 'war-polygons-outline',
                 type: 'line',
-                source: 'war-zones',
+                source: currentSourceId,
                 paint: {
                     'line-color': '#a26bce',
                     'line-width': 2,
@@ -190,79 +187,27 @@
             });
 
         } catch (error) {
-            console.error('Ошибка загрузки данных:', error);
-            alert('Ошибка загрузки данных. Проверьте консоль.');
-        }
-    });
-
-    // Функция поиска города
-    async function searchPlace(query) {
-        try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=geojson&q=${encodeURIComponent(query)}`);
-            const data = await response.json();
-
-            if (data.features.length === 0) {
-                alert('Ничего не найдено.');
-                return;
-            }
-
-            const place = data.features[0];
-            const [lon, lat] = place.geometry.coordinates;
-
-            map.flyTo({ center: [lon, lat], zoom: 12 });
-
-            if (searchMarker) searchMarker.remove();
-            if (searchBorder) {
-                map.removeLayer('search-border');
-                map.removeSource('search-border');
-                searchBorder = null;
-            }
-
-            searchMarker = new maplibregl.Marker({ color: 'black' })
-                .setLngLat([lon, lat])
-                .addTo(map);
-
-            if (place.geometry.type === "Polygon" || place.geometry.type === "MultiPolygon") {
-                map.addSource('search-border', {
-                    type: 'geojson',
-                    data: place
-                });
-
-                map.addLayer({
-                    id: 'search-border',
-                    type: 'line',
-                    source: 'search-border',
-                    paint: {
-                        'line-color': 'black',
-                        'line-width': 2,
-                        'line-dasharray': [2, 2]
-                    }
-                });
-
-                searchBorder = true;
-            }
-
-        } catch (error) {
-            console.error('Ошибка поиска:', error);
-            alert('Ошибка поиска. Попробуйте позже.');
+            console.error("Ошибка загрузки карты:", error.message);
         }
     }
 
-    document.getElementById('search-button').addEventListener('click', () => {
-        const query = document.getElementById('search-input').value.trim();
-        if (query.length > 0) {
-            searchPlace(query);
+    document.getElementById('date-picker').addEventListener('change', (e) => {
+        const date = new Date(e.target.value);
+        if (!isNaN(date)) {
+            const dateString = date.toISOString().split('T')[0];
+            currentDate = dateString;
+            loadMapData(dateString);
         }
     });
 
-    document.getElementById('search-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const query = document.getElementById('search-input').value.trim();
-            if (query.length > 0) {
-                searchPlace(query);
-            }
+    function checkForUpdates() {
+        if (currentDate) {
+            loadMapData(currentDate);
         }
-    });
+    }
+
+    // Каждые 10 секунд проверяем обновления
+    updateInterval = setInterval(checkForUpdates, 10000);
 </script>
 
 </body>
