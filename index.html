@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>DeepYouMap - Карта с Календарём и Событиями</title>
+    <title>DeepYouMap - Карта с событиями</title>
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
@@ -42,12 +42,11 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            z-index: 10;
-            font-size: 24px;
+            z-index: 11;
+            font-size: 26px;
             cursor: pointer;
         }
         #notifications-panel {
-            display: none;
             position: absolute;
             top: 50px;
             left: 10px;
@@ -59,11 +58,13 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             font-family: Arial, sans-serif;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
         }
         .event-card {
             background: #f1f1f1;
             padding: 8px;
-            margin-bottom: 8px;
             border-radius: 6px;
             font-size: 14px;
         }
@@ -133,24 +134,34 @@ const map = new maplibregl.Map({
     zoom: 6
 });
 
+// ID известных объектов
+const idToName = {
+    "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
+    "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
+};
+
+// ID серых "неизвестных"
 const unknownIds = [
     "c23197d4-9c04-4c88-831c-98ca30f6b716",
     "1cb055fe-e90a-4dfe-883a-eba21d440659",
     "fc58ba17-3dae-4bbc-9d5f-c62c3ed676ac"
 ];
 
-const idToName = {
-    "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
-    "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
-};
+// ID красных "оккупировано"
+const occupiedIds = [
+    "2228d511-c4fe-488a-a4b6-19e8f8163b01",
+    "c94f60ce-f725-41fd-9fee-59d528f59a2a",
+    "c682ae45-c0f3-4966-ac2e-7d53534ab54a"
+];
 
-// Список доступных дат + времён
+// Доступные даты и времена
 const availableDates = [
     "2022-02-23_00-00",
     "2022-02-24_04-00",
     "2022-02-24_09-00"
 ];
 
+// События
 const events = {
     "2022-02-24": [
         { time: "09:00", text: "Враг продвинулся к городу X" },
@@ -175,11 +186,14 @@ async function loadMap(dateStr) {
             if (idToName[featureId]) {
                 feature.properties.customName = idToName[featureId];
                 feature.properties.fillColor = "#b57edc"; // фиолетовый
+            } else if (occupiedIds.includes(featureId)) {
+                feature.properties.customName = "Оккупировано";
+                feature.properties.fillColor = "#d22b2b"; // красный
             } else if (unknownIds.includes(featureId)) {
-                feature.properties.customName = "неизвестно";
+                feature.properties.customName = "(неизвестно)";
                 feature.properties.fillColor = "#777777"; // серый
             } else {
-                feature.properties.customName = "неизвестно";
+                feature.properties.customName = "(неизвестно)";
                 feature.properties.fillColor = "#777777";
             }
             feature.properties.areaFormatted = formatArea(turf.area(feature));
@@ -266,15 +280,14 @@ document.getElementById('next').onclick = () => {
 
 document.getElementById('notifications').onclick = () => {
     const panel = document.getElementById('notifications-panel');
-    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
 };
 
-// Запускаем
 map.on('load', () => {
     updateDatePanel();
 });
 
-// Автообновление данных каждые 10 секунд
+// Автообновление карты
 setInterval(() => {
     updateDatePanel();
 }, 10000);
