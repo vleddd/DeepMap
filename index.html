@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>DeepYouMap - Полигоны из MapTiler</title>
+    <title>DeepYouMap - Полигоны с обводкой</title>
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
@@ -89,18 +89,32 @@
                 data: geojson
             });
 
+            // Слой заливки (фиолетово-лавандовый цвет)
             map.addLayer({
-                id: 'war-polygons',
+                id: 'war-polygons-fill',
                 type: 'fill',
                 source: 'war-zones',
                 paint: {
-                    'fill-color': '#d22b2b',
-                    'fill-opacity': 0.3,
-                    'fill-outline-color': '#a31212'
+                    'fill-color': '#b57edc', // лавандово-фиолетовый цвет
+                    'fill-opacity': 0.4
                 },
                 filter: ['==', '$type', 'Polygon']
             });
 
+            // Слой обводки
+            map.addLayer({
+                id: 'war-polygons-outline',
+                type: 'line',
+                source: 'war-zones',
+                paint: {
+                    'line-color': '#a26bce', // чуть темнее для контура
+                    'line-width': 2,
+                    'line-opacity': 1
+                },
+                filter: ['==', '$type', 'Polygon']
+            });
+
+            // Линии (если есть)
             map.addLayer({
                 id: 'war-lines',
                 type: 'line',
@@ -108,12 +122,12 @@
                 paint: {
                     'line-color': '#ff3a3a',
                     'line-width': 2,
-                    'line-opacity': 0.9
+                    'line-opacity': 0.8
                 },
                 filter: ['==', '$type', 'LineString']
             });
 
-            map.on('click', 'war-polygons', (e) => {
+            map.on('click', 'war-polygons-fill', (e) => {
                 const feature = e.features[0];
                 const name = feature.properties.customName || feature.properties.name || 'Неизвестный регион';
                 const areaFormatted = feature.properties.calculatedArea || 'Неизвестно';
@@ -134,10 +148,10 @@
                     .addTo(map);
             });
 
-            map.on('mouseenter', 'war-polygons', () => {
+            map.on('mouseenter', 'war-polygons-fill', () => {
                 map.getCanvas().style.cursor = 'pointer';
             });
-            map.on('mouseleave', 'war-polygons', () => {
+            map.on('mouseleave', 'war-polygons-fill', () => {
                 map.getCanvas().style.cursor = '';
             });
 
