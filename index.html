@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>DeepYouMap - Полигоны с обводкой</title>
+    <title>DeepYouMap - Поиск по карте</title>
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
@@ -10,154 +10,134 @@
         body { margin:0; padding:0; }
         #map { width:100%; height:100vh; }
 
-        .mapboxgl-popup {
-            max-width: 350px !important;
-            font-family: 'Arial', sans-serif;
+        /* Стили для панели поиска */
+        #search-panel {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            gap: 8px;
+            z-index: 2;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .mapboxgl-popup-content {
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
-            background: #2d2d2d;
-            color: white;
-        }
-        .mapboxgl-popup-content h3 {
-            margin: 0 0 10px 0;
-            color: #ff6b6b;
-            font-size: 18px;
-            border-bottom: 1px solid #444;
-            padding-bottom: 8px;
-        }
-        .war-info-table {
-            width: 100%;
-            border-collapse: collapse;
+        #search-input {
+            width: 250px;
+            padding: 6px 10px;
             font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
         }
-        .war-info-table td {
-            padding: 6px 0;
-            border-bottom: 1px solid #3a3a3a;
-            vertical-align: top;
+        #search-button {
+            padding: 6px 12px;
+            font-size: 14px;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
         }
-        .war-info-table tr:last-child td {
-            border-bottom: none;
-        }
-        .war-info-table td:first-child {
-            color: #aaa;
-            width: 40%;
-            padding-right: 10px;
+        #search-button:hover {
+            background: #222;
         }
     </style>
 </head>
 <body>
 
+<!-- Панель поиска -->
+<div id="search-panel">
+    <input type="text" id="search-input" placeholder="Найти город или поселок..." />
+    <button id="search-button">🔍</button>
+</div>
+
+<!-- Карта -->
 <div id="map"></div>
 
 <script>
-    const map = new maplibregl.Map({
+    let map;
+    let searchMarker = null;
+    let searchBorder = null;
+
+    // Инициализация карты
+    map = new maplibregl.Map({
         container: 'map',
         style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
         center: [31.1656, 48.3794],
         zoom: 6
     });
 
-    function formatArea(area) {
-        return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
-    }
-
-    map.on('load', async () => {
+    // Функция поиска города
+    async function searchPlace(query) {
         try {
-            const response = await fetch('https://api.maptiler.com/data/01966d36-bb63-7afa-b59f-a38d3e5107b9/features.json?key=A7YSMrQ3OZ0oStEWILkD');
-            const geojson = await response.json();
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=geojson&q=${encodeURIComponent(query)}`);
+            const data = await response.json();
 
-            const idToName = {
-                "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
-                "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
-            };
+            if (data.features.length === 0) {
+                alert('Ничего не найдено.');
+                return;
+            }
 
-            geojson.features.forEach(feature => {
-                const featureId = feature.id || feature.properties.id || feature.properties.featureId;
-                if (idToName[featureId]) {
-                    feature.properties.customName = idToName[featureId];
-                }
-                if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-                    feature.properties.calculatedArea = formatArea(turf.area(feature));
-                }
-            });
+            const place = data.features[0];
+            const [lon, lat] = place.geometry.coordinates;
 
-            map.addSource('war-zones', {
-                type: 'geojson',
-                data: geojson
-            });
+            // Центрируем карту
+            map.flyTo({ center: [lon, lat], zoom: 12 });
 
-            // Слой заливки (фиолетово-лавандовый цвет)
-            map.addLayer({
-                id: 'war-polygons-fill',
-                type: 'fill',
-                source: 'war-zones',
-                paint: {
-                    'fill-color': '#b57edc', // лавандово-фиолетовый цвет
-                    'fill-opacity': 0.4
-                },
-                filter: ['==', '$type', 'Polygon']
-            });
+            // Убираем старые маркеры/границы если были
+            if (searchMarker) searchMarker.remove();
+            if (searchBorder) map.removeLayer('search-border');
+            if (searchBorder) map.removeSource('search-border');
 
-            // Слой обводки
-            map.addLayer({
-                id: 'war-polygons-outline',
-                type: 'line',
-                source: 'war-zones',
-                paint: {
-                    'line-color': '#a26bce', // чуть темнее для контура
-                    'line-width': 2,
-                    'line-opacity': 1
-                },
-                filter: ['==', '$type', 'Polygon']
-            });
+            // Ставим маркер
+            searchMarker = new maplibregl.Marker({ color: 'black' })
+                .setLngLat([lon, lat])
+                .addTo(map);
 
-            // Линии (если есть)
-            map.addLayer({
-                id: 'war-lines',
-                type: 'line',
-                source: 'war-zones',
-                paint: {
-                    'line-color': '#ff3a3a',
-                    'line-width': 2,
-                    'line-opacity': 0.8
-                },
-                filter: ['==', '$type', 'LineString']
-            });
+            // Если есть геометрия области (граница города)
+            if (place.geometry.type === "Polygon" || place.geometry.type === "MultiPolygon") {
+                map.addSource('search-border', {
+                    type: 'geojson',
+                    data: place
+                });
 
-            map.on('click', 'war-polygons-fill', (e) => {
-                const feature = e.features[0];
-                const name = feature.properties.customName || feature.properties.name || 'Неизвестный регион';
-                const areaFormatted = feature.properties.calculatedArea || 'Неизвестно';
+                map.addLayer({
+                    id: 'search-border',
+                    type: 'line',
+                    source: 'search-border',
+                    paint: {
+                        'line-color': 'black',
+                        'line-width': 2,
+                        'line-dasharray': [2, 2] // Пунктирная линия
+                    }
+                });
 
-                const popupHTML = `
-                    <h3>${name}</h3>
-                    <table class="war-info-table">
-                        <tr>
-                            <td>Площадь:</td>
-                            <td>${areaFormatted}</td>
-                        </tr>
-                    </table>
-                `;
-
-                new maplibregl.Popup()
-                    .setLngLat(e.lngLat)
-                    .setHTML(popupHTML)
-                    .addTo(map);
-            });
-
-            map.on('mouseenter', 'war-polygons-fill', () => {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-            map.on('mouseleave', 'war-polygons-fill', () => {
-                map.getCanvas().style.cursor = '';
-            });
+                searchBorder = true;
+            }
 
         } catch (error) {
-            console.error('Ошибка загрузки данных:', error);
-            alert('Ошибка загрузки данных. Проверьте консоль.');
+            console.error('Ошибка поиска:', error);
+            alert('Ошибка поиска, попробуйте позже.');
+        }
+    }
+
+    // Обработчик кнопки поиска
+    document.getElementById('search-button').addEventListener('click', () => {
+        const query = document.getElementById('search-input').value.trim();
+        if (query.length > 0) {
+            searchPlace(query);
+        }
+    });
+
+    // Поиск по Enter
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const query = document.getElementById('search-input').value.trim();
+            if (query.length > 0) {
+                searchPlace(query);
+            }
         }
     });
 </script>
