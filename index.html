@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>DeepYouMap - Поиск по карте</title>
+    <title>DeepYouMap - Полигоны и Поиск</title>
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
@@ -43,6 +43,44 @@
         #search-button:hover {
             background: #222;
         }
+
+        /* Стили для попапа */
+        .mapboxgl-popup {
+            max-width: 350px !important;
+            font-family: 'Arial', sans-serif;
+        }
+        .mapboxgl-popup-content {
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+            background: #2d2d2d;
+            color: white;
+        }
+        .mapboxgl-popup-content h3 {
+            margin: 0 0 10px 0;
+            color: #ff6b6b;
+            font-size: 18px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 8px;
+        }
+        .war-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .war-info-table td {
+            padding: 6px 0;
+            border-bottom: 1px solid #3a3a3a;
+            vertical-align: top;
+        }
+        .war-info-table tr:last-child td {
+            border-bottom: none;
+        }
+        .war-info-table td:first-child {
+            color: #aaa;
+            width: 40%;
+            padding-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -61,12 +99,100 @@
     let searchMarker = null;
     let searchBorder = null;
 
-    // Инициализация карты
     map = new maplibregl.Map({
         container: 'map',
         style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
         center: [31.1656, 48.3794],
         zoom: 6
+    });
+
+    function formatArea(area) {
+        return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
+    }
+
+    map.on('load', async () => {
+        try {
+            // Загружаем твои полигоны
+            const response = await fetch('https://api.maptiler.com/data/01966d36-bb63-7afa-b59f-a38d3e5107b9/features.json?key=A7YSMrQ3OZ0oStEWILkD');
+            const geojson = await response.json();
+
+            const idToName = {
+                "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
+                "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
+            };
+
+            geojson.features.forEach(feature => {
+                const featureId = feature.id || feature.properties.id || feature.properties.featureId;
+                if (idToName[featureId]) {
+                    feature.properties.customName = idToName[featureId];
+                }
+                if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+                    feature.properties.calculatedArea = formatArea(turf.area(feature));
+                }
+            });
+
+            map.addSource('war-zones', {
+                type: 'geojson',
+                data: geojson
+            });
+
+            // Фиолетовая заливка
+            map.addLayer({
+                id: 'war-polygons-fill',
+                type: 'fill',
+                source: 'war-zones',
+                paint: {
+                    'fill-color': '#b57edc',
+                    'fill-opacity': 0.4
+                },
+                filter: ['==', '$type', 'Polygon']
+            });
+
+            // Обводка
+            map.addLayer({
+                id: 'war-polygons-outline',
+                type: 'line',
+                source: 'war-zones',
+                paint: {
+                    'line-color': '#a26bce',
+                    'line-width': 2,
+                    'line-opacity': 1
+                },
+                filter: ['==', '$type', 'Polygon']
+            });
+
+            map.on('click', 'war-polygons-fill', (e) => {
+                const feature = e.features[0];
+                const name = feature.properties.customName || feature.properties.name || 'Неизвестный регион';
+                const areaFormatted = feature.properties.calculatedArea || 'Неизвестно';
+
+                const popupHTML = `
+                    <h3>${name}</h3>
+                    <table class="war-info-table">
+                        <tr>
+                            <td>Площадь:</td>
+                            <td>${areaFormatted}</td>
+                        </tr>
+                    </table>
+                `;
+
+                new maplibregl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupHTML)
+                    .addTo(map);
+            });
+
+            map.on('mouseenter', 'war-polygons-fill', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'war-polygons-fill', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+        } catch (error) {
+            console.error('Ошибка загрузки данных:', error);
+            alert('Ошибка загрузки данных. Проверьте консоль.');
+        }
     });
 
     // Функция поиска города
@@ -83,20 +209,19 @@
             const place = data.features[0];
             const [lon, lat] = place.geometry.coordinates;
 
-            // Центрируем карту
             map.flyTo({ center: [lon, lat], zoom: 12 });
 
-            // Убираем старые маркеры/границы если были
             if (searchMarker) searchMarker.remove();
-            if (searchBorder) map.removeLayer('search-border');
-            if (searchBorder) map.removeSource('search-border');
+            if (searchBorder) {
+                map.removeLayer('search-border');
+                map.removeSource('search-border');
+                searchBorder = null;
+            }
 
-            // Ставим маркер
             searchMarker = new maplibregl.Marker({ color: 'black' })
                 .setLngLat([lon, lat])
                 .addTo(map);
 
-            // Если есть геометрия области (граница города)
             if (place.geometry.type === "Polygon" || place.geometry.type === "MultiPolygon") {
                 map.addSource('search-border', {
                     type: 'geojson',
@@ -110,7 +235,7 @@
                     paint: {
                         'line-color': 'black',
                         'line-width': 2,
-                        'line-dasharray': [2, 2] // Пунктирная линия
+                        'line-dasharray': [2, 2]
                     }
                 });
 
@@ -119,11 +244,10 @@
 
         } catch (error) {
             console.error('Ошибка поиска:', error);
-            alert('Ошибка поиска, попробуйте позже.');
+            alert('Ошибка поиска. Попробуйте позже.');
         }
     }
 
-    // Обработчик кнопки поиска
     document.getElementById('search-button').addEventListener('click', () => {
         const query = document.getElementById('search-input').value.trim();
         if (query.length > 0) {
@@ -131,7 +255,6 @@
         }
     });
 
-    // Поиск по Enter
     document.getElementById('search-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             const query = document.getElementById('search-input').value.trim();
