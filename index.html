@@ -100,39 +100,90 @@
             });
 
             // При клике на полигон — показываем попап
-            map.on('click', 'war-polygons', (e) => {
-                const feature = e.features[0];
-                const area = turf.area(feature);
-                const areaFormatted = formatArea(area);
+            map.on('load', async () => {
+    try {
+        const response = await fetch('https://api.maptiler.com/data/01966d36-bb63-7afa-b59f-a38d3e5107b9/features.json?key=A7YSMrQ3OZ0oStEWILkD');
+        const geojson = await response.json();
 
-                let popupHTML = `
-                    <h3>${feature.properties.name || 'Неизвестный регион'}</h3>
-                    <table class="war-info-table">
-                        <tr>
-                            <td>Площадь:</td>
-                            <td>${areaFormatted}</td>
-                        </tr>
-                    </table>
-                `;
+        // Маппинг ID ➔ Название
+        const idToName = {
+            "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
+            "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
+        };
 
-                new maplibregl.Popup()
-                    .setLngLat(e.lngLat)
-                    .setHTML(popupHTML)
-                    .addTo(map);
-            });
+        // Проходим по фичам и подставляем им правильные названия
+        geojson.features.forEach(feature => {
+            const featureId = feature.id || feature.properties.id || feature.properties.featureId;
+            if (idToName[featureId]) {
+                feature.properties.customName = idToName[featureId];
+            }
+        });
 
-            map.on('mouseenter', 'war-polygons', () => {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-            map.on('mouseleave', 'war-polygons', () => {
-                map.getCanvas().style.cursor = '';
-            });
+        map.addSource('war-zones', {
+            type: 'geojson',
+            data: geojson
+        });
 
-        } catch (error) {
-            console.error('Ошибка загрузки данных:', error);
-            alert('Ошибка загрузки данных. Проверьте консоль.');
-        }
-    });
+        map.addLayer({
+            id: 'war-polygons',
+            type: 'fill',
+            source: 'war-zones',
+            paint: {
+                'fill-color': '#d22b2b',
+                'fill-opacity': 0.3,
+                'fill-outline-color': '#a31212'
+            },
+            filter: ['==', '$type', 'Polygon']
+        });
+
+        map.addLayer({
+            id: 'war-lines',
+            type: 'line',
+            source: 'war-zones',
+            paint: {
+                'line-color': '#ff3a3a',
+                'line-width': 2,
+                'line-opacity': 0.9
+            },
+            filter: ['==', '$type', 'LineString']
+        });
+
+        map.on('click', 'war-polygons', (e) => {
+            const feature = e.features[0];
+            const area = turf.area(feature);
+            const areaFormatted = formatArea(area);
+
+            const name = feature.properties.customName || feature.properties.name || 'Неизвестный регион';
+
+            let popupHTML = `
+                <h3>${name}</h3>
+                <table class="war-info-table">
+                    <tr>
+                        <td>Площадь:</td>
+                        <td>${areaFormatted}</td>
+                    </tr>
+                </table>
+            `;
+
+            new maplibregl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML(popupHTML)
+                .addTo(map);
+        });
+
+        map.on('mouseenter', 'war-polygons', () => {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'war-polygons', () => {
+            map.getCanvas().style.cursor = '';
+        });
+
+    } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+        alert('Ошибка загрузки данных. Проверьте консоль.');
+    }
+});
+
 </script>
 </body>
 </html>
