@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DeepYouMap</title>
+    <title>DeepYouMap - Полигоны ЛДНР и Крым</title>
     <script src='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'></script>
     <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
     <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet'>
@@ -9,7 +9,6 @@
         body { margin:0; padding:0; }
         #map { width:100%; height:100vh; }
         
-        /* Стиль попапа */
         .mapboxgl-popup {
             max-width: 350px !important;
             font-family: 'Arial', sans-serif;
@@ -60,10 +59,9 @@
             zoom: 6
         });
 
-        // Функция для форматирования площади
+        // Функция для точного форматирования площади
         function formatArea(area) {
-            const areaKm2 = area / 1000000;
-            return areaKm2.toLocaleString('ru-RU', {maximumFractionDigits: 2}) + ' км²';
+            return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
         }
 
         // Загрузка данных
@@ -73,79 +71,104 @@
                 const response = await fetch('https://api.maptiler.com/data/01966d36-bb63-7afa-b59f-a38d3e5107b9/features.json?key=A7YSMrQ3OZ0oStEWILkD');
                 const geojson = await response.json();
                 
-                // Обработка каждого полигона отдельно
-                geojson.features.forEach((feature, index) => {
-                    if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-                        // Создаем отдельный источник для каждого полигона
-                        map.addSource(`polygon-${index}`, {
-                            type: 'geojson',
-                            data: {
-                                type: 'FeatureCollection',
-                                features: [feature]
-                            }
-                        });
-                        
-                        // Добавляем слой для полигона
-                        map.addLayer({
-                            id: `polygon-layer-${index}`,
-                            type: 'fill',
-                            source: `polygon-${index}`,
-                            paint: {
-                                'fill-color': '#d22b2b',
-                                'fill-opacity': 0.3,
-                                'fill-outline-color': '#a31212'
-                            }
-                        });
-                        
-                        // Обработчик клика для этого полигона
-                        map.on('click', `polygon-layer-${index}`, (e) => {
-                            const clickedFeature = e.features[0];
-                            const area = turf.area(clickedFeature);
-                            
-                            // Создаем HTML для таблички
-                            let popupHTML = `
-                                <h3>${clickedFeature.properties.name || 'Полигон'}</h3>
-                                <table class="war-info-table">
-                                    <tr>
-                                        <td>Площадь:</td>
-                                        <td>${formatArea(area)}</td>
-                                    </tr>
-                            `;
-                            
-                            // Добавляем все свойства
-                            for (const [key, value] of Object.entries(clickedFeature.properties)) {
-                                if (key !== 'name') {
-                                    popupHTML += `
-                                        <tr>
-                                            <td>${key}:</td>
-                                            <td>${value || '—'}</td>
-                                        </tr>
-                                    `;
-                                }
-                            }
-                            
-                            popupHTML += `</table>`;
-                            
-                            // Создаем попап
-                            new maplibregl.Popup()
-                                .setLngLat(e.lngLat)
-                                .setHTML(popupHTML)
-                                .addTo(map);
-                        });
-                        
-                        // Изменение курсора
-                        map.on('mouseenter', `polygon-layer-${index}`, () => {
-                            map.getCanvas().style.cursor = 'pointer';
-                        });
-                        map.on('mouseleave', `polygon-layer-${index}`, () => {
-                            map.getCanvas().style.cursor = '';
-                        });
+                // Массив для хранения информации о полигонах
+                const polygons = [
+                    {
+                        name: "ЛДНР",
+                        coordinates: [[
+                            [38.0, 49.0], [39.5, 49.0], 
+                            [39.5, 47.5], [38.0, 47.5], 
+                            [38.0, 49.0]
+                        ]],
+                        color: '#d22b2b'
+                    },
+                    {
+                        name: "Крым",
+                        coordinates: [[
+                            [32.5, 46.0], [36.5, 46.0],
+                            [36.5, 44.5], [32.5, 44.5],
+                            [32.5, 46.0]
+                        ]],
+                        color: '#d22b2b'
                     }
+                ];
+                
+                // Обработка каждого полигона
+                polygons.forEach((polygon, index) => {
+                    // Создаем GeoJSON для полигона
+                    const feature = {
+                        type: 'Feature',
+                        properties: {
+                            name: polygon.name,
+                            description: "Особый статус",
+                            area: formatArea(turf.area({
+                                type: 'Polygon',
+                                coordinates: polygon.coordinates
+                            }))
+                        },
+                        geometry: {
+                            type: 'Polygon',
+                            coordinates: polygon.coordinates
+                        }
+                    };
+                    
+                    // Добавляем источник
+                    map.addSource(`polygon-${index}`, {
+                        type: 'geojson',
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [feature]
+                        }
+                    });
+                    
+                    // Добавляем слой
+                    map.addLayer({
+                        id: `polygon-layer-${index}`,
+                        type: 'fill',
+                        source: `polygon-${index}`,
+                        paint: {
+                            'fill-color': polygon.color,
+                            'fill-opacity': 0.3,
+                            'fill-outline-color': '#a31212'
+                        }
+                    });
+                    
+                    // Обработчик клика
+                    map.on('click', `polygon-layer-${index}`, (e) => {
+                        const clickedFeature = e.features[0];
+                        
+                        let popupHTML = `
+                            <h3>${clickedFeature.properties.name}</h3>
+                            <table class="war-info-table">
+                                <tr>
+                                    <td>Площадь:</td>
+                                    <td>${clickedFeature.properties.area}</td>
+                                </tr>
+                                <tr>
+                                    <td>Статус:</td>
+                                    <td>${clickedFeature.properties.description}</td>
+                                </tr>
+                            </table>
+                        `;
+                        
+                        new maplibregl.Popup()
+                            .setLngLat(e.lngLat)
+                            .setHTML(popupHTML)
+                            .addTo(map);
+                    });
+                    
+                    // Изменение курсора
+                    map.on('mouseenter', `polygon-layer-${index}`, () => {
+                        map.getCanvas().style.cursor = 'pointer';
+                    });
+                    map.on('mouseleave', `polygon-layer-${index}`, () => {
+                        map.getCanvas().style.cursor = '';
+                    });
                 });
                 
             } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
-                alert('Не удалось загрузить данные. Проверьте консоль для деталей.');
+                console.error('Ошибка:', error);
+                alert('Ошибка загрузки данных. Проверьте консоль.');
             }
         });
     </script>
