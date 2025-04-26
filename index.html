@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
     <title>DeepYouMap - Полигоны из MapTiler</title>
-    <script src='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'></script>
-    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
-    <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet'>
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
     <style>
         body { margin:0; padding:0; }
         #map { width:100%; height:100vh; }
@@ -48,9 +49,11 @@
     </style>
 </head>
 <body>
+
 <div id="map"></div>
 
 <script>
+    // Инициализация карты
     const map = new maplibregl.Map({
         container: 'map',
         style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
@@ -58,22 +61,39 @@
         zoom: 6
     });
 
+    // Функция форматирования площади
     function formatArea(area) {
         return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
     }
 
+    // Действия после загрузки карты
     map.on('load', async () => {
         try {
+            // Загрузка GeoJSON
             const response = await fetch('https://api.maptiler.com/data/01966d36-bb63-7afa-b59f-a38d3e5107b9/features.json?key=A7YSMrQ3OZ0oStEWILkD');
             const geojson = await response.json();
 
-            // Добавляем данные как источник
+            // Связка ID ➔ Название
+            const idToName = {
+                "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
+                "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
+            };
+
+            // Присваиваем имена объектам по ID
+            geojson.features.forEach(feature => {
+                const featureId = feature.id || feature.properties.id || feature.properties.featureId;
+                if (idToName[featureId]) {
+                    feature.properties.customName = idToName[featureId];
+                }
+            });
+
+            // Добавляем источник данных
             map.addSource('war-zones', {
                 type: 'geojson',
                 data: geojson
             });
 
-            // Слой с полигонами
+            // Слой полигонов
             map.addLayer({
                 id: 'war-polygons',
                 type: 'fill',
@@ -86,7 +106,7 @@
                 filter: ['==', '$type', 'Polygon']
             });
 
-            // Слой с линиями (если есть)
+            // Слой линий (если есть)
             map.addLayer({
                 id: 'war-lines',
                 type: 'line',
@@ -99,91 +119,44 @@
                 filter: ['==', '$type', 'LineString']
             });
 
-            // При клике на полигон — показываем попап
-            map.on('load', async () => {
-    try {
-        const response = await fetch('https://api.maptiler.com/data/01966d36-bb63-7afa-b59f-a38d3e5107b9/features.json?key=A7YSMrQ3OZ0oStEWILkD');
-        const geojson = await response.json();
+            // Обработчик клика по полигону
+            map.on('click', 'war-polygons', (e) => {
+                const feature = e.features[0];
+                const area = turf.area(feature);
+                const areaFormatted = formatArea(area);
 
-        // Маппинг ID ➔ Название
-        const idToName = {
-            "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
-            "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
-        };
+                const name = feature.properties.customName || feature.properties.name || 'Неизвестный регион';
 
-        // Проходим по фичам и подставляем им правильные названия
-        geojson.features.forEach(feature => {
-            const featureId = feature.id || feature.properties.id || feature.properties.featureId;
-            if (idToName[featureId]) {
-                feature.properties.customName = idToName[featureId];
-            }
-        });
+                const popupHTML = `
+                    <h3>${name}</h3>
+                    <table class="war-info-table">
+                        <tr>
+                            <td>Площадь:</td>
+                            <td>${areaFormatted}</td>
+                        </tr>
+                    </table>
+                `;
 
-        map.addSource('war-zones', {
-            type: 'geojson',
-            data: geojson
-        });
+                new maplibregl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupHTML)
+                    .addTo(map);
+            });
 
-        map.addLayer({
-            id: 'war-polygons',
-            type: 'fill',
-            source: 'war-zones',
-            paint: {
-                'fill-color': '#d22b2b',
-                'fill-opacity': 0.3,
-                'fill-outline-color': '#a31212'
-            },
-            filter: ['==', '$type', 'Polygon']
-        });
+            // Курсор "рука" при наведении на полигоны
+            map.on('mouseenter', 'war-polygons', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'war-polygons', () => {
+                map.getCanvas().style.cursor = '';
+            });
 
-        map.addLayer({
-            id: 'war-lines',
-            type: 'line',
-            source: 'war-zones',
-            paint: {
-                'line-color': '#ff3a3a',
-                'line-width': 2,
-                'line-opacity': 0.9
-            },
-            filter: ['==', '$type', 'LineString']
-        });
-
-        map.on('click', 'war-polygons', (e) => {
-            const feature = e.features[0];
-            const area = turf.area(feature);
-            const areaFormatted = formatArea(area);
-
-            const name = feature.properties.customName || feature.properties.name || 'Неизвестный регион';
-
-            let popupHTML = `
-                <h3>${name}</h3>
-                <table class="war-info-table">
-                    <tr>
-                        <td>Площадь:</td>
-                        <td>${areaFormatted}</td>
-                    </tr>
-                </table>
-            `;
-
-            new maplibregl.Popup()
-                .setLngLat(e.lngLat)
-                .setHTML(popupHTML)
-                .addTo(map);
-        });
-
-        map.on('mouseenter', 'war-polygons', () => {
-            map.getCanvas().style.cursor = 'pointer';
-        });
-        map.on('mouseleave', 'war-polygons', () => {
-            map.getCanvas().style.cursor = '';
-        });
-
-    } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
-        alert('Ошибка загрузки данных. Проверьте консоль.');
-    }
-});
-
+        } catch (error) {
+            console.error('Ошибка загрузки данных:', error);
+            alert('Ошибка загрузки данных. Проверьте консоль.');
+        }
+    });
 </script>
+
 </body>
 </html>
