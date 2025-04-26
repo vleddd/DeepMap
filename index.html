@@ -176,10 +176,10 @@ async function loadMap(dateStr) {
                 feature.properties.customName = idToName[featureId];
                 feature.properties.fillColor = "#b57edc"; // фиолетовый
             } else if (unknownIds.includes(featureId)) {
-                feature.properties.customName = "(неизвестно)";
+                feature.properties.customName = "неизвестно";
                 feature.properties.fillColor = "#777777"; // серый
             } else {
-                feature.properties.customName = "(неизвестно)";
+                feature.properties.customName = "неизвестно";
                 feature.properties.fillColor = "#777777";
             }
             feature.properties.areaFormatted = formatArea(turf.area(feature));
