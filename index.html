@@ -152,7 +152,12 @@ const occupiedIds = [
     "2228d511-c4fe-488a-a4b6-19e8f8163b01",
     "c94f60ce-f725-41fd-9fee-59d528f59a2a",
     "c682ae45-c0f3-4966-ac2e-7d53534ab54a",
-    "18ed4fb6-c145-478f-baee-efa28b2601a5"
+    "18ed4fb6-c145-478f-baee-efa28b2601a5",
+    "2e1aacf8-b288-4067-8373-a6afecc8debe",
+    "4a635846-b315-4ef6-ba1e-728b5eb76d98",
+    "5885a5c6-9b23-4e22-8e42-d1edf8f3b301",
+    "c8b24166-6bee-480d-ab52-e5fcfbc9e28b"
+    
 ];
 
 // Доступные даты и времена
@@ -160,7 +165,8 @@ const availableDates = [
     "2022-02-23_00-00",
     "2022-02-24_04-00",
     "2022-02-24_09-00",
-    "2022-02-24_13-00"
+    "2022-02-24_13-00",
+    "2022-02-24_19-00"
 ];
 
 // События
@@ -192,10 +198,10 @@ async function loadMap(dateStr) {
                 feature.properties.customName = "Оккупировано";
                 feature.properties.fillColor = "#d22b2b"; // красный
             } else if (unknownIds.includes(featureId)) {
-                feature.properties.customName = "(неизвестно)";
+                feature.properties.customName = "неизвестно";
                 feature.properties.fillColor = "#777777"; // серый
             } else {
-                feature.properties.customName = "(неизвестно)";
+                feature.properties.customName = "неизвестно";
                 feature.properties.fillColor = "#777777";
             }
             feature.properties.areaFormatted = formatArea(turf.area(feature));
