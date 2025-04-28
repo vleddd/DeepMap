@@ -231,17 +231,7 @@ function updateDatePanel() {
     loadMap(availableDates[currentIndex]);
 }
 
-document.getElementById('prev').onclick = () => {
-    if (currentIndex > 0) { currentIndex--; updateDatePanel(); }
-};
-document.getElementById('next').onclick = () => {
-    if (currentIndex < availableDates.length - 1) { currentIndex++; updateDatePanel(); }
-};
-
-document.getElementById('notifications').onclick = () => {
-    const panel = document.getElementById('notifications-panel');
-    panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
-};
+let compareActive = false;
 
 document.getElementById('compare').onclick = async () => {
     if (!previousGeojson || !currentGeojson) {
@@ -249,10 +239,31 @@ document.getElementById('compare').onclick = async () => {
         return;
     }
 
+    if (compareActive) {
+        if (map.getLayer('changes-fill')) map.removeLayer('changes-fill');
+        if (map.getLayer('changes-outline')) map.removeLayer('changes-outline');
+        if (map.getSource('changes')) map.removeSource('changes');
+        compareActive = false;
+        return;
+    }
+
     const changes = [];
+
     currentGeojson.features.forEach(cur => {
-        const found = previousGeojson.features.some(prev => turf.booleanEqual(prev.geometry, cur.geometry));
-        if (!found) changes.push(cur);
+        let foundSame = false;
+        previousGeojson.features.forEach(prev => {
+            if (cur.id === prev.id || cur.properties.id === prev.properties.id) {
+                const diff = turf.difference(cur, prev);
+                if (diff) {
+                    diff.properties = cur.properties; // Наследуем цвет и название
+                    changes.push(diff);
+                }
+                foundSame = true;
+            }
+        });
+        if (!foundSame) {
+            changes.push(cur);
+        }
     });
 
     if (map.getSource('changes')) {
@@ -290,9 +301,11 @@ document.getElementById('compare').onclick = async () => {
                 '#000000'
             ],
             'line-width': 2,
-            'line-dasharray': [2,2]
+            'line-dasharray': [2, 2]
         }
     });
+
+    compareActive = true;
 };
 
 map.on('load', updateDatePanel);
