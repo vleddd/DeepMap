@@ -9,21 +9,17 @@
     <style>
         body { margin:0; padding:0; }
         #map { width:100%; height:100vh; }
-
-        /* Панель календаря */
         #date-panel {
             position: absolute;
-            top: 10px;
-            left: 50%;
+            top: 10px; left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255,255,255,0.9);
             padding: 8px 16px;
             border-radius: 10px;
             display: flex;
             align-items: center;
             gap: 15px;
             z-index: 10;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             font-family: Arial, sans-serif;
         }
         .date-button {
@@ -36,96 +32,46 @@
             font-size: 16px;
             font-weight: bold;
         }
-
-        /* Колокольчик */
         #notifications {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 11;
+            top: 10px; left: 10px;
             font-size: 26px;
             cursor: pointer;
+            z-index: 11;
         }
         #notifications-panel {
             position: absolute;
-            top: 50px;
-            left: 10px;
-            width: 300px;
-            max-height: 400px;
+            top: 50px; left: 10px;
+            width: 300px; max-height: 400px;
             overflow-y: auto;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255,255,255,0.95);
             padding: 10px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            font-family: Arial, sans-serif;
             display: none;
             flex-direction: column;
-            gap: 8px;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         .event-card {
             background: #f1f1f1;
             padding: 8px;
+            margin-bottom: 6px;
             border-radius: 6px;
-            font-size: 14px;
-        }
-        .event-time {
-            font-weight: bold;
-            color: #555;
-        }
-
-        /* Попап */
-        .mapboxgl-popup {
-            max-width: 350px !important;
-            font-family: 'Arial', sans-serif;
-        }
-        .mapboxgl-popup-content {
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
-            background: #2d2d2d;
-            color: white;
-        }
-        .mapboxgl-popup-content h3 {
-            margin: 0 0 10px 0;
-            color: #ff6b6b;
-            font-size: 18px;
-            border-bottom: 1px solid #444;
-            padding-bottom: 8px;
-        }
-        .war-info-table {
-            width: 100%;
-            font-size: 14px;
-            border-collapse: collapse;
-        }
-        .war-info-table td {
-            padding: 6px 0;
-            border-bottom: 1px solid #3a3a3a;
-        }
-        .war-info-table tr:last-child td {
-            border-bottom: none;
-        }
-        .war-info-table td:first-child {
-            color: #aaa;
-            width: 40%;
         }
     </style>
 </head>
 <body>
 
-<!-- Календарик -->
 <div id="date-panel">
     <button class="date-button" id="prev">&lt;</button>
     <span id="current-date"></span>
-    <button class="date-button" id="compare">&gt;&lt;</button> <!-- Новая кнопка -->
+    <button class="date-button" id="compare">&gt;&lt;</button>
     <button class="date-button" id="next">&gt;</button>
 </div>
 
-
-<!-- Колокольчик -->
 <div id="notifications">🔔</div>
 <div id="notifications-panel"></div>
 
-<!-- Карта -->
 <div id="map"></div>
 
 <script>
@@ -136,20 +82,17 @@ const map = new maplibregl.Map({
     zoom: 6
 });
 
-// ID известных объектов
 const idToName = {
     "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
     "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
 };
 
-// ID серых "неизвестных"
 const unknownIds = [
     "c23197d4-9c04-4c88-831c-98ca30f6b716",
     "1cb055fe-e90a-4dfe-883a-eba21d440659",
     "fc58ba17-3dae-4bbc-9d5f-c62c3ed676ac"
 ];
 
-// ID красных "оккупировано"
 const occupiedIds = [
     "2228d511-c4fe-488a-a4b6-19e8f8163b01",
     "c94f60ce-f725-41fd-9fee-59d528f59a2a",
@@ -182,10 +125,21 @@ const occupiedIds = [
     "31caf44b-632b-476a-8bf0-93bf9d45e9e8",
     "62cd1f77-9467-459a-a489-39fd03034cac",
     "1bea946c-d720-4842-bb4f-3c1576f9a3ec",
-    
+
+  ];
+
+const liberatedIds = [
+    "26fd7b89-afba-437a-80b0-36be3856c0a2",
+    "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b",
+    "67987403-7883-42dc-9d1d-67c07201c4a1",
+    "05c73b06-5cdb-4682-8bdc-addbcc7ea942",
+    "7b53cfba-7daf-46e4-acf9-d7887238d7f3",
+    "223f7858-a5e8-48a5-ab37-f6d5d1730c72",
+    "a1afe8fc-ab63-4f99-bd83-3e286ec5475f",
+    "622e8f29-dbbd-4a82-9a9d-4a44bfc18508",
+    "95ac0eb8-a43c-4801-b770-cef34cded718",
 ];
 
-// Доступные даты и времена
 const availableDates = [
     "2022-02-23_00-00",
     "2022-02-24_04-00",
@@ -209,33 +163,12 @@ const availableDates = [
     "2022-03-29_14-00",
 ];
 
-const liberatedIds = [
-    "26fd7b89-afba-437a-80b0-36be3856c0a2",
-    "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b",
-    "67987403-7883-42dc-9d1d-67c07201c4a1",
-    "05c73b06-5cdb-4682-8bdc-addbcc7ea942",
-    "7b53cfba-7daf-46e4-acf9-d7887238d7f3",
-    "223f7858-a5e8-48a5-ab37-f6d5d1730c72",
-    "a1afe8fc-ab63-4f99-bd83-3e286ec5475f",
-    "622e8f29-dbbd-4a82-9a9d-4a44bfc18508",
-    "95ac0eb8-a43c-4801-b770-cef34cded718",
-];
-
-
-// События
-const events = {
-    "2022-02-24": [
-        { time: "09:00", text: "Враг продвинулся к городу X" },
-        { time: "04:00", text: "Началось наступление в районе Y" }
-    ]
-};
-
+let currentIndex = 0;
 let currentGeojson = null;
 let previousGeojson = null;
-;
 
 function formatArea(area) {
-    return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
+    return (area / 1000000).toFixed(2) + ' км²';
 }
 
 async function loadMap(dateStr) {
@@ -243,39 +176,31 @@ async function loadMap(dateStr) {
     try {
         const response = await fetch(url);
         const geojson = await response.json();
-
-        // Сохраняем предыдущую версию
         previousGeojson = currentGeojson;
         currentGeojson = geojson;
 
-
-        geojson.features.forEach(feature => {
-            const featureId = feature.id || feature.properties.id || feature.properties.featureId;
-            if (idToName[featureId]) {
-            feature.properties.customName = idToName[featureId];
-            feature.properties.fillColor = "#b57edc"; // фиолетовый
-            } else if (occupiedIds.includes(featureId)) {
-            feature.properties.customName = "Оккупировано";
-            feature.properties.fillColor = "#d22b2b"; // красный
-            } else if (liberatedIds.includes(featureId)) {
-            feature.properties.customName = "Освобождено";
-            feature.properties.fillColor = "#3498db"; // синий
-            } else if (unknownIds.includes(featureId)) {
-            feature.properties.customName = "(неизвестно)";
-            feature.properties.fillColor = "#777777"; // серый
+        geojson.features.forEach(f => {
+            const id = f.id || f.properties.id;
+            if (idToName[id]) {
+                f.properties.customName = idToName[id];
+                f.properties.fillColor = "#b57edc";
+            } else if (occupiedIds.includes(id)) {
+                f.properties.customName = "Оккупировано";
+                f.properties.fillColor = "#d22b2b";
+            } else if (liberatedIds.includes(id)) {
+                f.properties.customName = "Освобождено";
+                f.properties.fillColor = "#3498db";
             } else {
-            feature.properties.customName = "(неизвестно)";
-            feature.properties.fillColor = "#777777";
+                f.properties.customName = "(неизвестно)";
+                f.properties.fillColor = "#777777";
             }
-
-            feature.properties.areaFormatted = formatArea(turf.area(feature));
+            f.properties.areaFormatted = formatArea(turf.area(f));
         });
 
         if (map.getSource('war-zones')) {
             map.getSource('war-zones').setData(geojson);
         } else {
             map.addSource('war-zones', { type: 'geojson', data: geojson });
-
             map.addLayer({
                 id: 'war-polygons',
                 type: 'fill',
@@ -284,70 +209,33 @@ async function loadMap(dateStr) {
                     'fill-color': ['get', 'fillColor'],
                     'fill-opacity': 0.5,
                     'fill-outline-color': '#a31212'
-                },
-                filter: ['==', '$type', 'Polygon']
+                }
             });
 
             map.on('click', 'war-polygons', (e) => {
-                const feature = e.features[0];
-                const popupHTML = `
-                    <h3>${feature.properties.customName}</h3>
-                    <table class="war-info-table">
-                        <tr><td>Площадь:</td><td>${feature.properties.areaFormatted}</td></tr>
-                    </table>
-                `;
+                const f = e.features[0];
                 new maplibregl.Popup()
                     .setLngLat(e.lngLat)
-                    .setHTML(popupHTML)
+                    .setHTML(`<h3>${f.properties.customName}</h3><table class="war-info-table"><tr><td>Площадь:</td><td>${f.properties.areaFormatted}</td></tr></table>`)
                     .addTo(map);
             });
-
-            map.on('mouseenter', 'war-polygons', () => {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-            map.on('mouseleave', 'war-polygons', () => {
-                map.getCanvas().style.cursor = '';
-            });
         }
-    } catch (error) {
-        console.error("Ошибка загрузки карты:", error);
+    } catch (e) {
+        console.error(e);
     }
 }
 
 function updateDatePanel() {
-    const [datePart, timePart] = availableDates[currentIndex].split('_');
-    document.getElementById('current-date').textContent = `${datePart} ${timePart.replace('-', ':')}`;
+    const [date, time] = availableDates[currentIndex].split('_');
+    document.getElementById('current-date').textContent = `${date} ${time.replace('-', ':')}`;
     loadMap(availableDates[currentIndex]);
-    loadEvents(datePart);
-}
-
-function loadEvents(date) {
-    const panel = document.getElementById('notifications-panel');
-    panel.innerHTML = '';
-    if (events[date]) {
-        const sorted = [...events[date]].sort((a, b) => b.time.localeCompare(a.time));
-        for (const ev of sorted) {
-            const div = document.createElement('div');
-            div.className = 'event-card';
-            div.innerHTML = `<div class="event-time">${ev.time}</div><div>${ev.text}</div>`;
-            panel.appendChild(div);
-        }
-    } else {
-        panel.innerHTML = '<div>Нет событий на эту дату</div>';
-    }
 }
 
 document.getElementById('prev').onclick = () => {
-    if (currentIndex > 0) {
-        currentIndex--;
-        updateDatePanel();
-    }
+    if (currentIndex > 0) { currentIndex--; updateDatePanel(); }
 };
 document.getElementById('next').onclick = () => {
-    if (currentIndex < availableDates.length - 1) {
-        currentIndex++;
-        updateDatePanel();
-    }
+    if (currentIndex < availableDates.length - 1) { currentIndex++; updateDatePanel(); }
 };
 
 document.getElementById('notifications').onclick = () => {
@@ -355,31 +243,17 @@ document.getElementById('notifications').onclick = () => {
     panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
 };
 
-    document.getElementById('compare').onclick = async () => {
-    if (!currentGeojson || !previousGeojson) {
-        alert('Нет данных для сравнения!');
+document.getElementById('compare').onclick = async () => {
+    if (!previousGeojson || !currentGeojson) {
+        alert('Нет предыдущей версии для сравнения!');
         return;
     }
 
-    const diffFeatures = [];
-
-    currentGeojson.features.forEach(curFeature => {
-        let changed = true;
-        previousGeojson.features.forEach(prevFeature => {
-            if (turf.booleanEqual(curFeature.geometry, prevFeature.geometry)) {
-                changed = false;
-            }
-        });
-
-        if (changed) {
-            diffFeatures.push(curFeature);
-        }
+    const changes = [];
+    currentGeojson.features.forEach(cur => {
+        const found = previousGeojson.features.some(prev => turf.booleanEqual(prev.geometry, cur.geometry));
+        if (!found) changes.push(cur);
     });
-
-    const diffCollection = {
-        type: "FeatureCollection",
-        features: diffFeatures
-    };
 
     if (map.getSource('changes')) {
         map.removeLayer('changes-fill');
@@ -387,7 +261,7 @@ document.getElementById('notifications').onclick = () => {
         map.removeSource('changes');
     }
 
-    map.addSource('changes', { type: 'geojson', data: diffCollection });
+    map.addSource('changes', { type: 'geojson', data: { type: "FeatureCollection", features: changes } });
 
     map.addLayer({
         id: 'changes-fill',
@@ -395,15 +269,13 @@ document.getElementById('notifications').onclick = () => {
         source: 'changes',
         paint: {
             'fill-color': [
-                'match',
-                ['get', 'customName'],
+                'match', ['get', 'customName'],
                 'Оккупировано', '#8B0000',
                 'Освобождено', '#3498db',
                 '#000000'
             ],
             'fill-opacity': 0.3
-        },
-        filter: ['==', '$type', 'Polygon']
+        }
     });
 
     map.addLayer({
@@ -412,23 +284,18 @@ document.getElementById('notifications').onclick = () => {
         source: 'changes',
         paint: {
             'line-color': [
-                'match',
-                ['get', 'customName'],
+                'match', ['get', 'customName'],
                 'Оккупировано', '#8B0000',
                 'Освобождено', '#3498db',
                 '#000000'
             ],
             'line-width': 2,
-            'line-dasharray': [2, 2]
-        },
-        filter: ['==', '$type', 'Polygon']
+            'line-dasharray': [2,2]
+        }
     });
 };
 
-    
-map.on('load', () => {
-    updateDatePanel();
-});
+map.on('load', updateDatePanel);
 
 // Автообновление карты
 setInterval(() => {
