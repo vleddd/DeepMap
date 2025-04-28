@@ -230,7 +230,9 @@ const events = {
     ]
 };
 
-let currentIndex = 0;
+let currentGeojson = null;
+let previousGeojson = null;
+;
 
 function formatArea(area) {
     return (area / 1000000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' км²';
@@ -241,6 +243,11 @@ async function loadMap(dateStr) {
     try {
         const response = await fetch(url);
         const geojson = await response.json();
+
+        // Сохраняем предыдущую версию
+        previousGeojson = currentGeojson;
+        currentGeojson = geojson;
+
 
         geojson.features.forEach(feature => {
             const featureId = feature.id || feature.properties.id || feature.properties.featureId;
