@@ -116,8 +116,10 @@
 <div id="date-panel">
     <button class="date-button" id="prev">&lt;</button>
     <span id="current-date"></span>
+    <button class="date-button" id="compare">&gt;&lt;</button> <!-- Новая кнопка -->
     <button class="date-button" id="next">&gt;</button>
 </div>
+
 
 <!-- Колокольчик -->
 <div id="notifications">🔔</div>
@@ -346,6 +348,77 @@ document.getElementById('notifications').onclick = () => {
     panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
 };
 
+    document.getElementById('compare').onclick = async () => {
+    if (!currentGeojson || !previousGeojson) {
+        alert('Нет данных для сравнения!');
+        return;
+    }
+
+    const diffFeatures = [];
+
+    currentGeojson.features.forEach(curFeature => {
+        let changed = true;
+        previousGeojson.features.forEach(prevFeature => {
+            if (turf.booleanEqual(curFeature.geometry, prevFeature.geometry)) {
+                changed = false;
+            }
+        });
+
+        if (changed) {
+            diffFeatures.push(curFeature);
+        }
+    });
+
+    const diffCollection = {
+        type: "FeatureCollection",
+        features: diffFeatures
+    };
+
+    if (map.getSource('changes')) {
+        map.removeLayer('changes-fill');
+        map.removeLayer('changes-outline');
+        map.removeSource('changes');
+    }
+
+    map.addSource('changes', { type: 'geojson', data: diffCollection });
+
+    map.addLayer({
+        id: 'changes-fill',
+        type: 'fill',
+        source: 'changes',
+        paint: {
+            'fill-color': [
+                'match',
+                ['get', 'customName'],
+                'Оккупировано', '#8B0000',
+                'Освобождено', '#3498db',
+                '#000000'
+            ],
+            'fill-opacity': 0.3
+        },
+        filter: ['==', '$type', 'Polygon']
+    });
+
+    map.addLayer({
+        id: 'changes-outline',
+        type: 'line',
+        source: 'changes',
+        paint: {
+            'line-color': [
+                'match',
+                ['get', 'customName'],
+                'Оккупировано', '#8B0000',
+                'Освобождено', '#3498db',
+                '#000000'
+            ],
+            'line-width': 2,
+            'line-dasharray': [2, 2]
+        },
+        filter: ['==', '$type', 'Polygon']
+    });
+};
+
+    
 map.on('load', () => {
     updateDatePanel();
 });
