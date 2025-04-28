@@ -202,15 +202,16 @@ async function loadMap(dateStr) {
         } else {
             map.addSource('war-zones', { type: 'geojson', data: geojson });
             map.addLayer({
-                id: 'war-polygons',
-                type: 'fill',
-                source: 'war-zones',
-                paint: {
-                    'fill-color': ['get', 'fillColor'],
-                    'fill-opacity': 0.5,
-                    'fill-outline-color': '#a31212'
-                }
-            });
+            id: 'changes-outline',
+            type: 'line',
+            source: 'changes',
+            paint: {
+           'line-color': '#a31212', // Старая красная рамка как у war-polygons
+           'line-width': 2,
+           'line-dasharray': [2, 2]
+         }
+        });
+
 
             map.on('click', 'war-polygons', (e) => {
                 const f = e.features[0];
