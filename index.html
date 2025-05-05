@@ -150,18 +150,38 @@ async function loadMap(dateStr) {
     geojson.features.forEach((f) => {
   const id = f.id;
 
-  //  Специальная проверка для нужного полигона и дат
-  if (id === "6dc44775-c39f-4928-acb5-c194397d07c8") {
-  if (dateStr <= "2022-03-29_14-00") {
-    f.properties.customName = "Оккупировано";
-    f.properties.fillColor = "#d22b2b"; // красный
-  } else {
-    f.properties.customName = "Освобождено";
-    f.properties.fillColor = "#3498db"; // голубой
-  }
-}
+  // Установим имя по умолчанию
+  f.properties.customName = "Неизвестно";
+  f.properties.fillColor = "#888";
 
+  if (occupiedIds.includes(id)) {
+    f.properties.customName = "Оккупировано";
+    f.properties.fillColor = "#d22b2b";
+  } else if (liberatedIds.includes(id)) {
+    f.properties.customName = "Освобождено";
+    f.properties.fillColor = "#3498db";
+  }
+
+  // Спец-обработка полигона 6dc44775
+  if (id === "6dc44775-c39f-4928-acb5-c194397d07c8") {
+    const dateIndex = availableDates.indexOf(dateStr);
+    const switchIndex = availableDates.indexOf("2022-03-29_14-00");
+    if (dateIndex === switchIndex) {
+      f.properties.customName = "Оккупировано";
+      f.properties.fillColor = "#d22b2b";
+    } else if (dateIndex > switchIndex) {
+      f.properties.customName = "Освобождено";
+      f.properties.fillColor = "#3498db";
+    }
+  }
+
+  // Добавим площадь
+  try {
+    const area = turf.area(f);
+    f.properties.areaFormatted = formatArea(area);
+  } catch {}
 });
+
 
 // затем — блок с map.getSource...
 
