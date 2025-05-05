@@ -230,6 +230,9 @@ document.getElementById('compare').onclick = () => {
   for (const id in currFeaturesMap) {
     const cur = currFeaturesMap[id];
     const prev = prevFeaturesMap[id];
+    const curStatus = cur.properties.customName;
+
+    if (!["Оккупировано", "Освобождено"].includes(curStatus)) continue;
 
     if (!prev) {
       added.push(cur);
@@ -242,6 +245,9 @@ document.getElementById('compare').onclick = () => {
   for (const id in prevFeaturesMap) {
     const prev = prevFeaturesMap[id];
     const cur = currFeaturesMap[id];
+    const prevStatus = prev.properties.customName;
+
+    if (!["Оккупировано", "Освобождено"].includes(prevStatus)) continue;
 
     if (!cur) {
       removed.push(prev);
