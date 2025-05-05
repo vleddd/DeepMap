@@ -213,7 +213,7 @@ document.getElementById('compare').onclick = () => {
   }
 
   if (compareActive) {
-    ['added-fill', 'removed-fill', 'changes-outline'].forEach(id => {
+    ['change-fill', 'change-outline'].forEach(id => {
       if (map.getLayer(id)) map.removeLayer(id);
     });
     if (map.getSource('changes')) map.removeSource('changes');
@@ -221,57 +221,44 @@ document.getElementById('compare').onclick = () => {
     return;
   }
 
-  const added = [];
-  const removed = [];
-
   const prevFeaturesMap = Object.fromEntries(previousGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)]));
   const currFeaturesMap = Object.fromEntries(currentGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)]));
+
+  const changes = [];
 
   for (const id in currFeaturesMap) {
     const cur = currFeaturesMap[id];
     const prev = prevFeaturesMap[id];
-    const curStatus = cur.properties.customName;
+    const status = cur.properties.customName;
 
-    if (!["Оккупировано", "Освобождено"].includes(curStatus)) continue;
+    if (!["Оккупировано", "Освобождено"].includes(status)) continue;
 
-    if (!prev) {
-      added.push(cur);
-    } else {
+    if (prev) {
       const diff = turf.difference(cur, prev);
-      if (diff) added.push({ ...cur, geometry: diff.geometry });
+      if (diff) {
+        const color = status === "Оккупировано" ? '#ff0000' : '#3498db';
+        changes.push({
+          ...cur,
+          geometry: diff.geometry,
+          properties: {
+            ...cur.properties,
+            fillColor: color,
+            customName: `Расширение (${status})`
+          }
+        });
+      }
     }
   }
-
-  for (const id in prevFeaturesMap) {
-    const prev = prevFeaturesMap[id];
-    const cur = currFeaturesMap[id];
-    const prevStatus = prev.properties.customName;
-
-    if (!["Оккупировано", "Освобождено"].includes(prevStatus)) continue;
-
-    if (!cur) {
-      removed.push(prev);
-    } else {
-      const diff = turf.difference(prev, cur);
-      if (diff) removed.push({ ...prev, geometry: diff.geometry });
-    }
-  }
-
-  const features = [
-    ...added.map(f => ({ ...f, properties: { ...f.properties, fillColor: '#00ff00', customName: 'Добавлено' } })),
-    ...removed.map(f => ({ ...f, properties: { ...f.properties, fillColor: '#ff0000', customName: 'Утрачено' } }))
-  ];
 
   map.addSource('changes', {
     type: 'geojson',
-    data: { type: 'FeatureCollection', features }
+    data: { type: 'FeatureCollection', features: changes }
   });
 
   map.addLayer({
-    id: 'added-fill',
+    id: 'change-fill',
     type: 'fill',
     source: 'changes',
-    filter: ['==', ['get', 'customName'], 'Добавлено'],
     paint: {
       'fill-color': ['get', 'fillColor'],
       'fill-opacity': 0.5
@@ -279,18 +266,7 @@ document.getElementById('compare').onclick = () => {
   });
 
   map.addLayer({
-    id: 'removed-fill',
-    type: 'fill',
-    source: 'changes',
-    filter: ['==', ['get', 'customName'], 'Утрачено'],
-    paint: {
-      'fill-color': ['get', 'fillColor'],
-      'fill-opacity': 0.5
-    }
-  });
-
-  map.addLayer({
-    id: 'changes-outline',
+    id: 'change-outline',
     type: 'line',
     source: 'changes',
     paint: {
