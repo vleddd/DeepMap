@@ -162,22 +162,6 @@ async function loadMap(dateStr) {
     return;
   }
 
-  // 🔽 остальная логика — без изменений
-  if (idToName[id]) {
-    f.properties.customName = idToName[id];
-    f.properties.fillColor = "#b57edc";
-  } else if (occupiedIds.includes(id)) {
-    f.properties.customName = "Оккупировано";
-    f.properties.fillColor = "#d22b2b";
-  } else if (liberatedIds.includes(id)) {
-    f.properties.customName = "Освобождено";
-    f.properties.fillColor = "#3498db";
-  } else {
-    f.properties.customName = "(неизвестно)";
-    f.properties.fillColor = "#777";
-  }
-});
-
     if (map.getSource('war-zones')) {
       map.getSource('war-zones').setData(geojson);
     } else {
