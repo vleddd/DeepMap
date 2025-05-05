@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>DeepYouMap - Карта с событиями</title>
+  <title>DeepYouMap</title>
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
@@ -17,10 +17,9 @@
       padding: 8px 16px;
       border-radius: 10px;
       display: flex;
-      align-items: center;
       gap: 15px;
       z-index: 10;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
     }
     .date-button {
       font-size: 20px;
@@ -31,32 +30,6 @@
     #current-date {
       font-size: 16px;
       font-weight: bold;
-    }
-    #notifications {
-      position: absolute;
-      top: 10px; left: 10px;
-      font-size: 26px;
-      cursor: pointer;
-      z-index: 11;
-    }
-    #notifications-panel {
-      position: absolute;
-      top: 50px; left: 10px;
-      width: 300px; max-height: 400px;
-      overflow-y: auto;
-      background: rgba(255,255,255,0.95);
-      padding: 10px;
-      border-radius: 8px;
-      display: none;
-      flex-direction: column;
-      font-family: Arial, sans-serif;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-    .event-card {
-      background: #f1f1f1;
-      padding: 8px;
-      margin-bottom: 6px;
-      border-radius: 6px;
     }
   </style>
 </head>
@@ -69,26 +42,22 @@
   <button class="date-button" id="next">&gt;</button>
 </div>
 
-<div id="notifications">🔔</div>
-<div id="notifications-panel"></div>
-
 <div id="map"></div>
 
 <script>
-  const map = new maplibregl.Map({
-    container: 'map',
-    style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
-    center: [31.1656, 48.3794],
-    zoom: 6
-  });
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
+  center: [31.1656, 48.3794],
+  zoom: 6
+});
 
-  const idToName = {
-    "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
-    "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
-  };
+const idToName = {
+  "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
+  "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
+};
 
-  const occupiedIds = [
-    "2228d511-c4fe-488a-a4b6-19e8f8163b01",
+const occupiedIds = ["2228d511-c4fe-488a-a4b6-19e8f8163b01",
     "c94f60ce-f725-41fd-9fee-59d528f59a2a",
     "c682ae45-c0f3-4966-ac2e-7d53534ab54a",
     "18ed4fb6-c145-478f-baee-efa28b2601a5",
@@ -119,10 +88,9 @@
     "31caf44b-632b-476a-8bf0-93bf9d45e9e8",
     "62cd1f77-9467-459a-a489-39fd03034cac",
     "1bea946c-d720-4842-bb4f-3c1576f9a3ec"
-  ];
-
-  const liberatedIds = [
-    "26fd7b89-afba-437a-80b0-36be3856c0a2",
+                    ];
+  
+const liberatedIds = ["26fd7b89-afba-437a-80b0-36be3856c0a2",
     "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b",
     "67987403-7883-42dc-9d1d-67c07201c4a1",
     "05c73b06-5cdb-4682-8bdc-addbcc7ea942",
@@ -131,10 +99,9 @@
     "a1afe8fc-ab63-4f99-bd83-3e286ec5475f",
     "622e8f29-dbbd-4a82-9a9d-4a44bfc18508",
     "95ac0eb8-a43c-4801-b770-cef34cded718"
-  ];
-
-  const availableDates = [
-    "2022-02-23_00-00",
+                     ];
+  
+const availableDates = ["2022-02-23_00-00",
     "2022-02-24_04-00",
     "2022-02-24_09-00",
     "2022-02-24_13-00",
@@ -154,171 +121,140 @@
     "2022-03-11_12-00",
     "2022-03-22_12-00",
     "2022-03-29_14-00"
-  ];
+        ];
 
-  let currentIndex = 0;
-  let currentGeojson = null;
-  let previousGeojson = null;
-  let compareActive = false;
+let currentIndex = 0;
+let currentGeojson = null;
+let previousGeojson = null;
+let compareActive = false;
 
-  function formatArea(area) {
-    return (area / 1000000).toFixed(2) + ' км²';
-  }
-
-  async function loadMap(dateStr) {
-    const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
-    try {
-      const response = await fetch(url);
-      const geojson = await response.json();
-     
-::contentReference[oaicite:0]{index=0}
+function formatArea(area) {
+  return (area / 1e6).toFixed(2) + ' км²';
+}
 
 async function loadMap(dateStr) {
-    const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
-    try {
-        const response = await fetch(url);
-        const geojson = await response.json();
-        previousGeojson = currentGeojson;
-        currentGeojson = geojson;
+  const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
+  try {
+    const response = await fetch(url);
+    const geojson = await response.json();
 
-        geojson.features.forEach(f => {
-            const id = f.id || f.properties.id;
-            if (idToName[id]) {
-                f.properties.customName = idToName[id];
-                f.properties.fillColor = "#b57edc";
-            } else if (occupiedIds.includes(id)) {
-                f.properties.customName = "Оккупировано";
-                f.properties.fillColor = "#d22b2b";
-            } else if (liberatedIds.includes(id)) {
-                f.properties.customName = "Освобождено";
-                f.properties.fillColor = "#3498db";
-            } else {
-                f.properties.customName = "(неизвестно)";
-                f.properties.fillColor = "#777777";
-            }
-            f.properties.areaFormatted = formatArea(turf.area(f));
-        });
+    previousGeojson = currentGeojson;
+    currentGeojson = geojson;
 
-        if (map.getSource('war-zones')) {
-            map.getSource('war-zones').setData(geojson);
-        } else {
-            map.addSource('war-zones', { type: 'geojson', data: geojson });
-            map.addLayer({
-            id: 'changes-outline',
-            type: 'line',
-            source: 'changes',
-            paint: {
-           'line-color': '#a31212', // Старая красная рамка как у war-polygons
-           'line-width': 2,
-           'line-dasharray': [2, 2]
-         }
-        });
+    geojson.features.forEach(f => {
+      const id = f.id || f.properties.id;
+      if (idToName[id]) {
+        f.properties.customName = idToName[id];
+        f.properties.fillColor = "#b57edc";
+      } else if (occupiedIds.includes(id)) {
+        f.properties.customName = "Оккупировано";
+        f.properties.fillColor = "#d22b2b";
+      } else if (liberatedIds.includes(id)) {
+        f.properties.customName = "Освобождено";
+        f.properties.fillColor = "#3498db";
+      } else {
+        f.properties.customName = "(неизвестно)";
+        f.properties.fillColor = "#777";
+      }
+      f.properties.areaFormatted = formatArea(turf.area(f));
+    });
 
-
-            map.on('click', 'war-polygons', (e) => {
-                const f = e.features[0];
-                new maplibregl.Popup()
-                    .setLngLat(e.lngLat)
-                    .setHTML(`<h3>${f.properties.customName}</h3><table class="war-info-table"><tr><td>Площадь:</td><td>${f.properties.areaFormatted}</td></tr></table>`)
-                    .addTo(map);
-            });
+    if (map.getSource('war-zones')) {
+      map.getSource('war-zones').setData(geojson);
+    } else {
+      map.addSource('war-zones', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'war-polygons',
+        type: 'fill',
+        source: 'war-zones',
+        paint: {
+          'fill-color': ['get', 'fillColor'],
+          'fill-opacity': 0.4
         }
-    } catch (e) {
-        console.error(e);
+      });
+
+      map.on('click', 'war-polygons', (e) => {
+        const f = e.features[0];
+        new maplibregl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(`<h3>${f.properties.customName}</h3><p>Площадь: ${f.properties.areaFormatted}</p>`)
+          .addTo(map);
+      });
     }
+  } catch (err) {
+    console.error("Ошибка загрузки GeoJSON:", err);
+  }
 }
 
 function updateDatePanel() {
-    const [date, time] = availableDates[currentIndex].split('_');
-    document.getElementById('current-date').textContent = `${date} ${time.replace('-', ':')}`;
-    loadMap(availableDates[currentIndex]);
+  const [date, time] = availableDates[currentIndex].split('_');
+  document.getElementById('current-date').textContent = `${date} ${time.replace('-', ':')}`;
+  loadMap(availableDates[currentIndex]);
 }
 
-let compareActive = false;
+document.getElementById('prev').onclick = () => {
+  if (currentIndex > 0) {
+    currentIndex--;
+    updateDatePanel();
+  }
+};
 
-document.getElementById('compare').onclick = async () => {
-    if (!previousGeojson || !currentGeojson) {
-        alert('Нет предыдущей версии для сравнения!');
-        return;
+document.getElementById('next').onclick = () => {
+  if (currentIndex < availableDates.length - 1) {
+    currentIndex++;
+    updateDatePanel();
+  }
+};
+
+document.getElementById('compare').onclick = () => {
+  if (!previousGeojson || !currentGeojson) {
+    alert("Нет данных для сравнения");
+    return;
+  }
+
+  if (compareActive) {
+    if (map.getLayer('changes-fill')) map.removeLayer('changes-fill');
+    if (map.getLayer('changes-outline')) map.removeLayer('changes-outline');
+    if (map.getSource('changes')) map.removeSource('changes');
+    compareActive = false;
+    return;
+  }
+
+  const changes = [];
+  currentGeojson.features.forEach(cur => {
+    const prev = previousGeojson.features.find(p => p.id === cur.id || p.properties.id === cur.properties.id);
+    if (!prev || JSON.stringify(cur.geometry) !== JSON.stringify(prev.geometry)) {
+      changes.push(cur);
     }
+  });
 
-    if (compareActive) {
-        if (map.getLayer('changes-fill')) map.removeLayer('changes-fill');
-        if (map.getLayer('changes-outline')) map.removeLayer('changes-outline');
-        if (map.getSource('changes')) map.removeSource('changes');
-        compareActive = false;
-        return;
+  map.addSource('changes', { type: 'geojson', data: { type: 'FeatureCollection', features: changes } });
+
+  map.addLayer({
+    id: 'changes-fill',
+    type: 'fill',
+    source: 'changes',
+    paint: {
+      'fill-color': ['get', 'fillColor'],
+      'fill-opacity': 0.3
     }
+  });
 
-    const changes = [];
-
-    currentGeojson.features.forEach(cur => {
-        let foundSame = false;
-        previousGeojson.features.forEach(prev => {
-            if (cur.id === prev.id || cur.properties.id === prev.properties.id) {
-                const diff = turf.difference(cur, prev);
-                if (diff) {
-                    diff.properties = cur.properties; // Наследуем цвет и название
-                    changes.push(diff);
-                }
-                foundSame = true;
-            }
-        });
-        if (!foundSame) {
-            changes.push(cur);
-        }
-    });
-
-    if (map.getSource('changes')) {
-        map.removeLayer('changes-fill');
-        map.removeLayer('changes-outline');
-        map.removeSource('changes');
+  map.addLayer({
+    id: 'changes-outline',
+    type: 'line',
+    source: 'changes',
+    paint: {
+      'line-color': ['get', 'fillColor'],
+      'line-width': 2,
+      'line-dasharray': [2, 2]
     }
+  });
 
-    map.addSource('changes', { type: 'geojson', data: { type: "FeatureCollection", features: changes } });
-
-    map.addLayer({
-        id: 'changes-fill',
-        type: 'fill',
-        source: 'changes',
-        paint: {
-            'fill-color': [
-                'match', ['get', 'customName'],
-                'Оккупировано', '#8B0000',
-                'Освобождено', '#3498db',
-                '#000000'
-            ],
-            'fill-opacity': 0.3
-        }
-    });
-
-    map.addLayer({
-        id: 'changes-outline',
-        type: 'line',
-        source: 'changes',
-        paint: {
-            'line-color': [
-                'match', ['get', 'customName'],
-                'Оккупировано', '#8B0000',
-                'Освобождено', '#3498db',
-                '#000000'
-            ],
-            'line-width': 2,
-            'line-dasharray': [2, 2]
-        }
-    });
-
-    compareActive = true;
+  compareActive = true;
 };
 
 map.on('load', updateDatePanel);
-
-// Автообновление карты
-setInterval(() => {
-    updateDatePanel();
-}, 10000);
-
 </script>
-
 </body>
 </html>
