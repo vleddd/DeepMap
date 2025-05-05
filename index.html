@@ -221,22 +221,39 @@ document.getElementById('compare').onclick = () => {
   }
 
   const changes = [];
+
   currentGeojson.features.forEach(cur => {
+    const curGeom = cur.geometry;
     const prev = previousGeojson.features.find(p => p.id === cur.id || p.properties.id === cur.properties.id);
-    if (!prev || JSON.stringify(cur.geometry) !== JSON.stringify(prev.geometry)) {
+
+    if (!prev) {
+      // Новый полигон
       changes.push(cur);
+    } else {
+      const prevGeom = prev.geometry;
+      if (!turf.booleanEqual(curGeom, prevGeom)) {
+        // Полигон изменился
+        changes.push(cur);
+      }
     }
   });
 
-  map.addSource('changes', { type: 'geojson', data: { type: 'FeatureCollection', features: changes } });
+  map.addSource('changes', {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features: changes
+    }
+  });
 
   map.addLayer({
     id: 'changes-fill',
     type: 'fill',
     source: 'changes',
     paint: {
+      'fill-pattern': 'diagonal-stripe',
       'fill-color': ['get', 'fillColor'],
-      'fill-opacity': 0.3
+      'fill-opacity': 0.4
     }
   });
 
@@ -253,6 +270,7 @@ document.getElementById('compare').onclick = () => {
 
   compareActive = true;
 };
+
 
 map.on('load', updateDatePanel);
 </script>
