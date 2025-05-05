@@ -223,26 +223,24 @@ document.getElementById('compare').onclick = () => {
   const changes = [];
 
   currentGeojson.features.forEach(cur => {
-    const curGeom = cur.geometry;
     const prev = previousGeojson.features.find(p => p.id === cur.id || p.properties.id === cur.properties.id);
 
     if (!prev) {
-  // Новый полигон — добавляем весь
-  changes.push(cur);
-} else {
-  const diff = turf.difference(cur, prev);
-  if (diff) {
-    changes.push({
-      type: "Feature",
-      geometry: diff.geometry,
-      properties: {
-        ...cur.properties,
-        customName: cur.properties.customName + " (изменено)"
+      changes.push(cur); // Новый полигон
+    } else {
+      const diff = turf.difference(cur, prev);
+      if (diff) {
+        changes.push({
+          type: "Feature",
+          geometry: diff.geometry,
+          properties: {
+            ...cur.properties,
+            customName: cur.properties.customName + " (изменено)"
+          }
+        });
       }
-    });
-  }
-}
-
+    }
+  });
 
   map.addSource('changes', {
     type: 'geojson',
@@ -257,9 +255,8 @@ document.getElementById('compare').onclick = () => {
     type: 'fill',
     source: 'changes',
     paint: {
-      'fill-pattern': 'diagonal-stripe',
       'fill-color': ['get', 'fillColor'],
-      'fill-opacity': 0.4
+      'fill-opacity': 0.6
     }
   });
 
@@ -268,7 +265,7 @@ document.getElementById('compare').onclick = () => {
     type: 'line',
     source: 'changes',
     paint: {
-      'line-color': ['get', 'fillColor'],
+      'line-color': '#000',
       'line-width': 2,
       'line-dasharray': [2, 2]
     }
@@ -276,6 +273,7 @@ document.getElementById('compare').onclick = () => {
 
   compareActive = true;
 };
+
 
 
 map.on('load', updateDatePanel);
