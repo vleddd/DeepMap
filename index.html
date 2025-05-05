@@ -87,12 +87,6 @@
     "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
   };
 
-  const unknownIds = [
-    "c23197d4-9c04-4c88-831c-98ca30f6b716",
-    "1cb055fe-e90a-4dfe-883a-eba21d440659",
-    "fc58ba17-3dae-4bbc-9d5f-c62c3ed676ac"
-  ];
-
   const occupiedIds = [
     "2228d511-c4fe-488a-a4b6-19e8f8163b01",
     "c94f60ce-f725-41fd-9fee-59d528f59a2a",
@@ -168,10 +162,16 @@
   let compareActive = false;
 
   function formatArea(area) {
-    return (area / 1000000).toFixed(2) + ' км
-::contentReference[oaicite:0]{index=0}
- 
+    return (area / 1000000).toFixed(2) + ' км²';
+  }
 
+  async function loadMap(dateStr) {
+    const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
+    try {
+      const response = await fetch(url);
+      const geojson = await response.json();
+     
+::contentReference[oaicite:0]{index=0}
 
 async function loadMap(dateStr) {
     const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
