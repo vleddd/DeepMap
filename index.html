@@ -162,6 +162,11 @@ async function loadMap(dateStr) {
     f.properties.fillColor = "#3498db";
   }
 
+      if (idToName[id]) {
+        f.properties.customName = idToName[id];
+        f.properties.fillColor = "#b57edc";
+      } 
+
   // Спец-обработка полигона 6dc44775
   if (id === "6dc44775-c39f-4928-acb5-c194397d07c8") {
     const dateIndex = availableDates.indexOf(dateStr);
