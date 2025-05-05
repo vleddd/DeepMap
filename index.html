@@ -227,16 +227,22 @@ document.getElementById('compare').onclick = () => {
     const prev = previousGeojson.features.find(p => p.id === cur.id || p.properties.id === cur.properties.id);
 
     if (!prev) {
-      // Новый полигон
-      changes.push(cur);
-    } else {
-      const prevGeom = prev.geometry;
-      if (!turf.booleanEqual(curGeom, prevGeom)) {
-        // Полигон изменился
-        changes.push(cur);
+  // Новый полигон — добавляем весь
+  changes.push(cur);
+} else {
+  const diff = turf.difference(cur, prev);
+  if (diff) {
+    changes.push({
+      type: "Feature",
+      geometry: diff.geometry,
+      properties: {
+        ...cur.properties,
+        customName: cur.properties.customName + " (изменено)"
       }
-    }
-  });
+    });
+  }
+}
+
 
   map.addSource('changes', {
     type: 'geojson',
