@@ -251,6 +251,21 @@ document.getElementById('compare').onclick = () => {
     }
   }
 
+    // Условно меняем статус нужного полигона на нужное время
+const specialId = '6dc44775-c39f-4928-acb5-c194397d07c8';
+geojson.features.forEach(f => {
+  const id = f.id || f.properties.id;
+  if (id === specialId) {
+    if (dateStr === '2022-03-29_14-00') {
+      f.properties.customName = 'Оккупировано';
+      f.properties.fillColor = '#d22b2b'; // Красный
+    } else if (dateStr === '2022-03-29_16-30') {
+      f.properties.customName = 'Освобождено';
+      f.properties.fillColor = '#3498db'; // Голубой
+    }
+  }
+});
+  
   map.addSource('changes', {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: changes }
@@ -279,21 +294,6 @@ document.getElementById('compare').onclick = () => {
 
   compareActive = true;
 };
-
-  // Условно меняем статус нужного полигона на нужное время
-const specialId = '6dc44775-c39f-4928-acb5-c194397d07c8';
-geojson.features.forEach(f => {
-  const id = f.id || f.properties.id;
-  if (id === specialId) {
-    if (dateStr === '2022-03-29_14-00') {
-      f.properties.customName = 'Оккупировано';
-      f.properties.fillColor = '#d22b2b'; // Красный
-    } else if (dateStr === '2022-03-29_16-30') {
-      f.properties.customName = 'Освобождено';
-      f.properties.fillColor = '#3498db'; // Голубой
-    }
-  }
-});
 
 map.on('load', updateDatePanel);
 </script>
