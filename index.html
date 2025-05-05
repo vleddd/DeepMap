@@ -150,17 +150,21 @@ async function loadMap(dateStr) {
     geojson.features.forEach((f) => {
   const id = f.id;
 
-  // 👇 Специальная проверка для нужного полигона и дат
+  //  Специальная проверка для нужного полигона и дат
   if (id === "6dc44775-c39f-4928-acb5-c194397d07c8") {
-    if (currentDate === "2022-03-29_14-00") {
+    if (dateStr === "2022-03-29_14-00") {
       f.properties.customName = "Оккупировано";
       f.properties.fillColor = "#d22b2b"; // красный
-    } else if (currentDate === "2022-03-29_16-30") {
+    } else if (dateStr === "2022-03-29_16-30") {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#3498db"; // голубой
     }
-    return;
   }
+});
+
+// затем — блок с map.getSource...
+
+
 
     if (map.getSource('war-zones')) {
       map.getSource('war-zones').setData(geojson);
