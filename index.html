@@ -1,72 +1,72 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>DeepYouMap - Карта с событиями</title>
-    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
-    <style>
-        body { margin:0; padding:0; }
-        #map { width:100%; height:100vh; }
-        #date-panel {
-            position: absolute;
-            top: 10px; left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255,255,255,0.9);
-            padding: 8px 16px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 10;
-            font-family: Arial, sans-serif;
-        }
-        .date-button {
-            font-size: 20px;
-            cursor: pointer;
-            background: none;
-            border: none;
-        }
-        #current-date {
-            font-size: 16px;
-            font-weight: bold;
-        }
-        #notifications {
-            position: absolute;
-            top: 10px; left: 10px;
-            font-size: 26px;
-            cursor: pointer;
-            z-index: 11;
-        }
-        #notifications-panel {
-            position: absolute;
-            top: 50px; left: 10px;
-            width: 300px; max-height: 400px;
-            overflow-y: auto;
-            background: rgba(255,255,255,0.95);
-            padding: 10px;
-            border-radius: 8px;
-            display: none;
-            flex-direction: column;
-            font-family: Arial, sans-serif;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .event-card {
-            background: #f1f1f1;
-            padding: 8px;
-            margin-bottom: 6px;
-            border-radius: 6px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>DeepYouMap - Карта с событиями</title>
+  <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { width: 100%; height: 100vh; }
+    #date-panel {
+      position: absolute;
+      top: 10px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.9);
+      padding: 8px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      z-index: 10;
+      font-family: Arial, sans-serif;
+    }
+    .date-button {
+      font-size: 20px;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    #current-date {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    #notifications {
+      position: absolute;
+      top: 10px; left: 10px;
+      font-size: 26px;
+      cursor: pointer;
+      z-index: 11;
+    }
+    #notifications-panel {
+      position: absolute;
+      top: 50px; left: 10px;
+      width: 300px; max-height: 400px;
+      overflow-y: auto;
+      background: rgba(255,255,255,0.95);
+      padding: 10px;
+      border-radius: 8px;
+      display: none;
+      flex-direction: column;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .event-card {
+      background: #f1f1f1;
+      padding: 8px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+    }
+  </style>
 </head>
 <body>
 
 <div id="date-panel">
-    <button class="date-button" id="prev">&lt;</button>
-    <span id="current-date"></span>
-    <button class="date-button" id="compare">&gt;&lt;</button>
-    <button class="date-button" id="next">&gt;</button>
+  <button class="date-button" id="prev">&lt;</button>
+  <span id="current-date"></span>
+  <button class="date-button" id="compare">&gt;&lt;</button>
+  <button class="date-button" id="next">&gt;</button>
 </div>
 
 <div id="notifications">🔔</div>
@@ -75,25 +75,25 @@
 <div id="map"></div>
 
 <script>
-const map = new maplibregl.Map({
+  const map = new maplibregl.Map({
     container: 'map',
     style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
     center: [31.1656, 48.3794],
     zoom: 6
-});
+  });
 
-const idToName = {
+  const idToName = {
     "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
     "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
-};
+  };
 
-const unknownIds = [
+  const unknownIds = [
     "c23197d4-9c04-4c88-831c-98ca30f6b716",
     "1cb055fe-e90a-4dfe-883a-eba21d440659",
     "fc58ba17-3dae-4bbc-9d5f-c62c3ed676ac"
-];
+  ];
 
-const occupiedIds = [
+  const occupiedIds = [
     "2228d511-c4fe-488a-a4b6-19e8f8163b01",
     "c94f60ce-f725-41fd-9fee-59d528f59a2a",
     "c682ae45-c0f3-4966-ac2e-7d53534ab54a",
@@ -124,11 +124,10 @@ const occupiedIds = [
     "3e3812f1-6b76-4599-8877-7eee51b14dd8",
     "31caf44b-632b-476a-8bf0-93bf9d45e9e8",
     "62cd1f77-9467-459a-a489-39fd03034cac",
-    "1bea946c-d720-4842-bb4f-3c1576f9a3ec",
-
+    "1bea946c-d720-4842-bb4f-3c1576f9a3ec"
   ];
 
-const liberatedIds = [
+  const liberatedIds = [
     "26fd7b89-afba-437a-80b0-36be3856c0a2",
     "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b",
     "67987403-7883-42dc-9d1d-67c07201c4a1",
@@ -137,10 +136,10 @@ const liberatedIds = [
     "223f7858-a5e8-48a5-ab37-f6d5d1730c72",
     "a1afe8fc-ab63-4f99-bd83-3e286ec5475f",
     "622e8f29-dbbd-4a82-9a9d-4a44bfc18508",
-    "95ac0eb8-a43c-4801-b770-cef34cded718",
-];
+    "95ac0eb8-a43c-4801-b770-cef34cded718"
+  ];
 
-const availableDates = [
+  const availableDates = [
     "2022-02-23_00-00",
     "2022-02-24_04-00",
     "2022-02-24_09-00",
@@ -160,16 +159,19 @@ const availableDates = [
     "2022-03-06_17-00",
     "2022-03-11_12-00",
     "2022-03-22_12-00",
-    "2022-03-29_14-00",
-];
+    "2022-03-29_14-00"
+  ];
 
-let currentIndex = 0;
-let currentGeojson = null;
-let previousGeojson = null;
+  let currentIndex = 0;
+  let currentGeojson = null;
+  let previousGeojson = null;
+  let compareActive = false;
 
-function formatArea(area) {
-    return (area / 1000000).toFixed(2) + ' км²';
-}
+  function formatArea(area) {
+    return (area / 1000000).toFixed(2) + ' км
+::contentReference[oaicite:0]{index=0}
+ 
+
 
 async function loadMap(dateStr) {
     const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
