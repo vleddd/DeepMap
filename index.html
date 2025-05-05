@@ -280,50 +280,20 @@ document.getElementById('compare').onclick = () => {
   compareActive = true;
 };
 
-  const polygonId = '6dc44775-c39f-4928-acb5-c194397d07c8'; // Замените на нужный ID
-const file1 = 'map_2022-03-29_14-00.geojson';
-const file2 = 'map_2022-03-29_16-30.geojson';
-
-async function updatePolygonStatus() {
-  // Загрузка первого файла
-  const response1 = await fetch(file1);
-  const geojson1 = await response1.json();
-
-  // Загрузка второго файла
-  const response2 = await fetch(file2);
-  const geojson2 = await response2.json();
-
-  // Обновление статуса в первом файле
-  const feature1 = geojson1.features.find(f => f.id === polygonId || f.properties.id === polygonId);
-  if (feature1) {
-    feature1.properties.customName = 'Оккупировано';
-    feature1.properties.fillColor = '#d22b2b'; // Красный цвет
+  // Условно меняем статус нужного полигона на нужное время
+const specialId = '6dc44775-c39f-4928-acb5-c194397d07c8';
+geojson.features.forEach(f => {
+  const id = f.id || f.properties.id;
+  if (id === specialId) {
+    if (dateStr === '2022-03-29_14-00') {
+      f.properties.customName = 'Оккупировано';
+      f.properties.fillColor = '#d22b2b'; // Красный
+    } else if (dateStr === '2022-03-29_16-30') {
+      f.properties.customName = 'Освобождено';
+      f.properties.fillColor = '#3498db'; // Голубой
+    }
   }
-
-  // Обновление статуса во втором файле
-  const feature2 = geojson2.features.find(f => f.id === polygonId || f.properties.id === polygonId);
-  if (feature2) {
-    feature2.properties.customName = 'Освобождено';
-    feature2.properties.fillColor = '#3498db'; // Синий цвет
-  }
-
-  // Сохранение обновлённых файлов
-  downloadGeoJSON(geojson1, 'map_2022-03-29_14-00_updated.geojson');
-  downloadGeoJSON(geojson2, 'map_2022-03-29_16-30_updated.geojson');
-}
-
-function downloadGeoJSON(data, filename) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-updatePolygonStatus();
-
+});
 
 map.on('load', updateDatePanel);
 </script>
