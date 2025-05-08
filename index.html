@@ -550,15 +550,26 @@ document.getElementById('compare').onclick = () => {
   compareActive = true;
 };
 
- flatpickr("#date-picker", {
+// Массив дат в формате, который понимает flatpickr
+const flatpickrDates = availableDates.map(d => {
+  const [date, time] = d.split('_');
+  return `${date} ${time.replace('-', ':')}`;
+});
+
+// Настройка flatpickr
+flatpickr("#date-picker", {
   enableTime: true,
   dateFormat: "Y-m-d H:i",
   time_24hr: true,
+  disableMobile: true,
+  defaultDate: flatpickrDates[flatpickrDates.length - 1],
+  enable: flatpickrDates,
   onClose: function(selectedDates) {
     const d = selectedDates[0];
     if (!d) return;
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}`;
-    const index = availableDates.indexOf(dateStr);
+
+    const formatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}`;
+    const index = availableDates.indexOf(formatted);
     if (index !== -1) {
       currentIndex = index;
       updateDatePanel();
@@ -568,9 +579,11 @@ document.getElementById('compare').onclick = () => {
   }
 });
 
+// Кнопка для открытия календаря
 document.getElementById("open-calendar").onclick = () => {
   document.getElementById("date-picker")._flatpickr.open();
 };
+
  
 
 map.on('load', updateDatePanel);
