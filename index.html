@@ -573,17 +573,13 @@ document.getElementById("open-calendar").addEventListener("click", () => {
   const picker = document.getElementById("date-picker");
   picker.style.display = picker.style.display === "none" ? "block" : "none";
 });
-</script>
+<script>
+  // Кнопка для открытия календаря
+  document.getElementById("open-calendar").onclick = () => {
+    document.getElementById("date-picker")._flatpickr.open();
+  };
 
-
-// Кнопка для открытия календаря
-document.getElementById("open-calendar").onclick = () => {
-  document.getElementById("date-picker")._flatpickr.open();
-};
-
- 
-
-map.on('load', updateDatePanel);
+  map.on('load', updateDatePanel);
 </script>
 </body>
 </html>
