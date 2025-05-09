@@ -557,27 +557,24 @@ const flatpickrDates = availableDates.map(d => {
 });
 
 // Настройка flatpickr
+<script>
 flatpickr("#date-picker", {
-  enableTime: true,
-  dateFormat: "Y-m-d H:i",
-  time_24hr: true,
-  disableMobile: true,
-  defaultDate: flatpickrDates[flatpickrDates.length - 1],
-  enable: flatpickrDates,
-  onClose: function(selectedDates) {
-    const d = selectedDates[0];
-    if (!d) return;
-
-    const formatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}`;
-    const index = availableDates.indexOf(formatted);
-    if (index !== -1) {
-      currentIndex = index;
-      updateDatePanel();
-    } else {
-      alert("Нет данных на эту дату");
+  dateFormat: "Y-m-d",
+  onChange: function(selectedDates, dateStr) {
+    const closest = availableDates.find(d => d.startsWith(dateStr));
+    if (closest) {
+      currentIndex = availableDates.indexOf(closest);
+      loadMap(closest);
     }
   }
 });
+
+document.getElementById("open-calendar").addEventListener("click", () => {
+  const picker = document.getElementById("date-picker");
+  picker.style.display = picker.style.display === "none" ? "block" : "none";
+});
+</script>
+
 
 // Кнопка для открытия календаря
 document.getElementById("open-calendar").onclick = () => {
