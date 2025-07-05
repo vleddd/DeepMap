@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>DeepYouMap</title>
   <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
   <style>
     body { margin: 0; padding: 0; }
-    #map { width: 100%; height: 100vh; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
     #date-panel {
       position: absolute;
-      top: 10px; left: 50%;
+      top: 10px; 
+      left: 50%;
       transform: translateX(-50%);
       background: rgba(255,255,255,0.9);
       padding: 8px 16px;
@@ -22,41 +24,66 @@
       gap: 15px;
       z-index: 10;
       font-family: Arial;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
     .date-button {
       font-size: 20px;
       cursor: pointer;
       background: none;
       border: none;
+      padding: 0 10px;
     }
     #current-date {
       font-size: 16px;
       font-weight: bold;
+      line-height: 24px;
+      min-width: 180px;
+      text-align: center;
+    }
+    #calendar-container {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 12;
+    }
+    #date-picker {
+      opacity: 0;
+      position: absolute;
+      left: 0;
+      width: 0;
     }
   </style>
 </head>
 <body>
+  <div id="map"></div>
 
-<div id="date-panel">
-  <button class="date-button" id="prev">&lt;</button>
-  <span id="current-date"></span>
-  <button class="date-button" id="compare">&gt;&lt;</button>
-  <button class="date-button" id="next">&gt;</button>
-</div>
+  <div id="date-panel">
+    <button class="date-button" id="prev">&lt;</button>
+    <span id="current-date"></span>
+    <button class="date-button" id="compare">&gt;&lt;</button>
+    <button class="date-button" id="next">&gt;</button>
+  </div>
 
-<div style="position: absolute; top: 10px; right: 10px; z-index: 12;">
-  <button id="open-calendar" class="date-button">📅 Дата</button>
-  <input id="date-picker" type="text" style="display: none;" />
-</div>
+  <div id="calendar-container">
+    <button id="open-calendar" class="date-button">📅 Дата</button>
+    <input id="date-picker" type="text" />
+  </div>
 
 <script>
+// Основные константы
+const MAPTILER_KEY = 'A7YSMrQ3OZ0oStEWILkD';
+const MAP_STYLE = `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`;
+const GEOJSON_BASE_URL = 'https://vleddd.github.io/DeepYouMap/maps/';
+
+// Инициализация карты
 const map = new maplibregl.Map({
   container: 'map',
-  style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
+  style: MAP_STYLE,
   center: [31.1656, 48.3794],
   zoom: 6
 });
 
+// Данные для карты
 const idToName = {
   "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
   "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
@@ -97,7 +124,6 @@ const occupiedIds = ["2228d511-c4fe-488a-a4b6-19e8f8163b01",
     "ffe28d26-b43a-4d92-8ffc-b1f8c4f182a5",
     "58d29447-7594-4c49-aac3-97efb86538e8",                 
                     ];
-  
 const liberatedIds = ["26fd7b89-afba-437a-80b0-36be3856c0a2",
     "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b",
     "67987403-7883-42dc-9d1d-67c07201c4a1",
@@ -121,8 +147,9 @@ const liberatedIds = ["26fd7b89-afba-437a-80b0-36be3856c0a2",
      "b9182566-adc0-486e-8a13-7d2683b547ac",
      "5c1f5c96-f7b0-496a-b9af-96a3cd67582c",                
                      ];
-  
-const availableDates = ["2022-02-23_00-00",
+
+const availableDates = [
+  "2022-02-23_00-00",
     "2022-02-24_04-00",
     "2022-02-24_09-00",
     "2022-02-24_13-00",
@@ -192,313 +219,180 @@ const availableDates = ["2022-02-23_00-00",
     "2022-05-25_20-23",                    
         ];
 
+// Состояние приложения
 let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
 let previousGeojson = null;
 let compareActive = false;
 
+// Функция форматирования площади
 function formatArea(area) {
   return (area / 1e6).toFixed(2) + ' км²';
 }
 
+// Загрузка GeoJSON
 async function loadMap(dateStr) {
-  const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
   try {
-    const response = await fetch(url);
+    const response = await fetch(`${GEOJSON_BASE_URL}map_${dateStr}.geojson`);
+    if (!response.ok) throw new Error('Ошибка загрузки данных');
+    
     const geojson = await response.json();
-
     previousGeojson = currentGeojson;
     currentGeojson = geojson;
 
-    geojson.features.forEach((f) => {
-      const id = f.id;
-
-      // Установим имя по умолчанию
-      f.properties.customName = "Неизвестно";
-      f.properties.fillColor = "#888";
+    // Обработка свойств каждого объекта
+    geojson.features.forEach((feature) => {
+      const id = feature.id;
+      feature.properties.customName = "Неизвестно";
+      feature.properties.fillColor = "#888";
 
       if (occupiedIds.includes(id)) {
-        f.properties.customName = "Оккупировано";
-        f.properties.fillColor = "#d22b2b";
+        feature.properties.customName = "Оккупировано";
+        feature.properties.fillColor = "#d22b2b";
       } else if (liberatedIds.includes(id)) {
-        f.properties.customName = "Освобождено";
-        f.properties.fillColor = "#3498db";
+        feature.properties.customName = "Освобождено";
+        feature.properties.fillColor = "#3498db";
       }
 
       if (idToName[id]) {
-        f.properties.customName = idToName[id];
-        f.properties.fillColor = "#b57edc";
-      } 
-
-      // Спец-обработка полигонов с изменением статуса
-      const dateIndex = availableDates.indexOf(dateStr);
-      
-      if (id === "6dc44775-c39f-4928-acb5-c194397d07c8") {
-        const switchIndex = availableDates.indexOf("2022-03-29_14-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
+        feature.properties.customName = idToName[id];
+        feature.properties.fillColor = "#b57edc";
       }
 
-      if (id === "6ee17f5e-4f2e-4cac-9d68-a669a35b556b") {
-        const switchIndex = availableDates.indexOf("2022-03-29_19-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }    
-
-      if (id === "3e3812f1-6b76-4599-8877-7eee51b14dd8") {
-        const switchIndex = availableDates.indexOf("2022-03-29_19-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }        
-
-      if (id === "1bea946c-d720-4842-bb4f-3c1576f9a3ec") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }      
-
-      if (id === "62cd1f77-9467-459a-a489-39fd03034cac") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }      
-
-      if (id === "31caf44b-632b-476a-8bf0-93bf9d45e9e8") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }      
-
-      if (id === "4a635846-b315-4ef6-ba1e-728b5eb76d98") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }          
-
-      if (id === "c7bf8dae-1b72-48f4-aa51-d62e31f32268") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }            
-
-      if (id === "2cdb7a21-da5a-4393-8972-91c4b30739a4") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }    
-
-      if (id === "747b8f95-8c3d-40b3-a806-a2a3ea96f78f") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }      
-
-      if (id === "7a7efc17-c569-46e0-8ad9-3acea3152f2e") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }      
-
-      if (id === "1d234475-4fd9-466b-9f69-4e59e02ba756") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }     
-
-      if (id === "5bf99d3e-af7a-460e-a9e8-5965c7e86959") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }     
-
-      if (id === "a74cd8d9-0994-4fab-82e7-14146f3a5d9a") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }     
-    
-      if (id === "14f624ef-2e2d-4f1a-9c2a-32e252fdbfeb") {
-        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-        if (dateIndex === switchIndex) {
-          f.properties.customName = "Оккупировано";
-          f.properties.fillColor = "#d22b2b";
-        } else if (dateIndex > switchIndex) {
-          f.properties.customName = "Освобождено";
-          f.properties.fillColor = "#3498db";
-        }
-      }     
-        
-      // Добавим площадь
+      // Расчет площади
       try {
-        const area = turf.area(f);
-        f.properties.areaFormatted = formatArea(area);
-      } catch {}
+        const area = turf.area(feature);
+        feature.properties.areaFormatted = formatArea(area);
+      } catch (e) {
+        console.warn("Ошибка расчета площади:", e);
+      }
     });
 
+    // Обновление или добавление слоя
     if (map.getSource('war-zones')) {
       map.getSource('war-zones').setData(geojson);
     } else {
-      map.addSource('war-zones', { type: 'geojson', data: geojson });
-      map.addLayer({
-        id: 'war-polygons',
-        type: 'fill',
-        source: 'war-zones',
-        paint: {
-          'fill-color': ['get', 'fillColor'],
-          'fill-opacity': 0.4
-        }
-      });
+      map.on('load', () => {
+        map.addSource('war-zones', { type: 'geojson', data: geojson });
+        map.addLayer({
+          id: 'war-polygons',
+          type: 'fill',
+          source: 'war-zones',
+          paint: {
+            'fill-color': ['get', 'fillColor'],
+            'fill-opacity': 0.4
+          }
+        });
 
-      map.on('click', 'war-polygons', (e) => {
-        const f = e.features[0];
-        new maplibregl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(`<h3>${f.properties.customName}</h3><p>Площадь: ${f.properties.areaFormatted}</p>`)
-          .addTo(map);
+        // Всплывающие подсказки
+        map.on('click', 'war-polygons', (e) => {
+          new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <h3>${e.features[0].properties.customName}</h3>
+              <p>Площадь: ${e.features[0].properties.areaFormatted || 'неизвестна'}</p>
+            `)
+            .addTo(map);
+        });
+
+        // Изменение курсора при наведении
+        map.on('mouseenter', 'war-polygons', () => {
+          map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'war-polygons', () => {
+          map.getCanvas().style.cursor = '';
+        });
       });
     }
   } catch (err) {
-    console.error("Ошибка загрузки GeoJSON:", err);
+    console.error("Ошибка загрузки карты:", err);
+    alert("Не удалось загрузить данные карты");
   }
 }
 
+// Обновление панели даты
 function updateDatePanel() {
   const [date, time] = availableDates[currentIndex].split('_');
-  document.getElementById('current-date').textContent = `${date} ${time.replace('-', ':')}`;
+  document.getElementById('current-date').textContent = 
+    `${date} ${time.replace('-', ':')}`;
   loadMap(availableDates[currentIndex]);
 }
 
-document.getElementById('prev').onclick = () => {
+// Обработчики кнопок
+document.getElementById('prev').addEventListener('click', () => {
   if (currentIndex > 0) {
     currentIndex--;
     updateDatePanel();
   }
-};
+});
 
-document.getElementById('next').onclick = () => {
+document.getElementById('next').addEventListener('click', () => {
   if (currentIndex < availableDates.length - 1) {
     currentIndex++;
     updateDatePanel();
   }
-};
+});
 
-document.getElementById('compare').onclick = () => {
+// Инициализация календаря
+const datePicker = flatpickr("#date-picker", {
+  enable: availableDates.map(d => {
+    const [date, time] = d.split('_');
+    return `${date}T${time.replace('-', ':')}`;
+  }),
+  dateFormat: "Y-m-d H:i",
+  enableTime: true,
+  time_24hr: true,
+  onChange: function(selectedDates, dateStr) {
+    const formatted = dateStr.replace(' ', '_').replace(':', '-');
+    const foundIndex = availableDates.findIndex(d => d.startsWith(formatted));
+    if (foundIndex >= 0) {
+      currentIndex = foundIndex;
+      updateDatePanel();
+    }
+  }
+});
+
+document.getElementById('open-calendar').addEventListener('click', () => {
+  datePicker.open();
+});
+
+// Функция сравнения
+document.getElementById('compare').addEventListener('click', toggleCompare);
+
+function toggleCompare() {
   if (!previousGeojson || !currentGeojson) {
     alert("Нет данных для сравнения");
     return;
   }
 
   if (compareActive) {
-    ['change-fill', 'change-outline'].forEach(id => {
-      if (map.getLayer(id)) map.removeLayer(id);
-    });
-    if (map.getSource('changes')) map.removeSource('changes');
+    removeComparisonLayers();
     compareActive = false;
     return;
   }
 
-  const prevFeaturesMap = Object.fromEntries(previousGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)]));
-  const currFeaturesMap = Object.fromEntries(currentGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)]));
+  compareActive = true;
+  showChanges();
+}
 
-  const changes = [];
+function removeComparisonLayers() {
+  ['change-fill', 'change-outline'].forEach(id => {
+    if (map.getLayer(id)) map.removeLayer(id);
+  });
+  if (map.getSource('changes')) map.removeSource('changes');
+}
 
-  for (const id in currFeaturesMap) {
-    const cur = currFeaturesMap[id];
-    const prev = prevFeaturesMap[id];
-    const status = cur.properties.customName;
-
-    if (!["Оккупировано", "Освобождено"].includes(status)) continue;
-
-    if (prev) {
-      const diff = turf.difference(cur, prev);
-      if (diff) {
-        const color = status === "Оккупировано" ? '#ff0000' : '#3498db';
-        changes.push({
-          ...cur,
-          geometry: diff.geometry,
-          properties: {
-            ...cur.properties,
-            fillColor: color,
-            customName: `Расширение (${status})`
-          }
-        });
-      }
-    }
+function showChanges() {
+  const changes = calculateChanges();
+  
+  if (changes.features.length === 0) {
+    alert("Нет изменений для отображения");
+    return;
   }
 
   map.addSource('changes', {
     type: 'geojson',
-    data: { type: 'FeatureCollection', features: changes }
+    data: changes
   });
 
   map.addLayer({
@@ -521,36 +415,49 @@ document.getElementById('compare').onclick = () => {
       'line-dasharray': [2, 2]
     }
   });
+}
 
-  compareActive = true;
-};
+function calculateChanges() {
+  const prevFeatures = new Map(previousGeojson.features.map(f => [f.id, f]));
+  const currFeatures = new Map(currentGeojson.features.map(f => [f.id, f]));
 
-// Подготовка дат для flatpickr
-const flatpickrDates = availableDates.map(d => {
-  const [date, time] = d.split('_');
-  return `${date} ${time.replace('-', ':')}`;
-});
+  const changes = {
+    type: 'FeatureCollection',
+    features: []
+  };
 
-// Инициализация flatpickr
-const datePicker = flatpickr("#date-picker", {
-  enable: flatpickrDates,
-  dateFormat: "Y-m-d H:i",
-  onChange: function(selectedDates, dateStr) {
-    const formattedDate = dateStr.replace(' ', '_').replace(':', '-');
-    const closest = availableDates.find(d => d.startsWith(formattedDate));
-    if (closest) {
-      currentIndex = availableDates.indexOf(closest);
-      updateDatePanel();
+  for (const [id, currFeature] of currFeatures) {
+    const status = currFeature.properties.customName;
+    if (!["Оккупировано", "Освобождено"].includes(status)) continue;
+
+    const prevFeature = prevFeatures.get(id);
+    if (!prevFeature) continue;
+
+    try {
+      const diff = turf.difference(currFeature, prevFeature);
+      if (diff) {
+        changes.features.push({
+          ...diff,
+          properties: {
+            ...currFeature.properties,
+            fillColor: status === "Оккупировано" ? '#ff0000' : '#3498db',
+            customName: `Изменение (${status})`
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("Ошибка сравнения объектов:", e);
     }
   }
-});
 
-// Кнопка для открытия календаря
-document.getElementById("open-calendar").addEventListener("click", () => {
-  datePicker.open();
-});
+  return changes;
+}
 
-map.on('load', updateDatePanel);
+// Инициализация приложения
+map.on('load', () => {
+  updateDatePanel();
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+});
 </script>
 </body>
 </html>
