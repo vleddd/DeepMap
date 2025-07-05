@@ -49,7 +49,6 @@
   <input id="date-picker" type="text" style="display: none;" />
 </div>
 
-
 <script>
 const map = new maplibregl.Map({
   container: 'map',
@@ -212,223 +211,199 @@ async function loadMap(dateStr) {
     currentGeojson = geojson;
 
     geojson.features.forEach((f) => {
-  const id = f.id;
+      const id = f.id;
 
-  // Установим имя по умолчанию
-  f.properties.customName = "Неизвестно";
-  f.properties.fillColor = "#888";
+      // Установим имя по умолчанию
+      f.properties.customName = "Неизвестно";
+      f.properties.fillColor = "#888";
 
-  if (occupiedIds.includes(id)) {
-    f.properties.customName = "Оккупировано";
-    f.properties.fillColor = "#d22b2b";
-  } else if (liberatedIds.includes(id)) {
-    f.properties.customName = "Освобождено";
-    f.properties.fillColor = "#3498db";
-  }
+      if (occupiedIds.includes(id)) {
+        f.properties.customName = "Оккупировано";
+        f.properties.fillColor = "#d22b2b";
+      } else if (liberatedIds.includes(id)) {
+        f.properties.customName = "Освобождено";
+        f.properties.fillColor = "#3498db";
+      }
 
       if (idToName[id]) {
         f.properties.customName = idToName[id];
         f.properties.fillColor = "#b57edc";
       } 
 
-  // Спец-обработка полигона 6dc44775
-  if (id === "6dc44775-c39f-4928-acb5-c194397d07c8") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-29_14-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }
+      // Спец-обработка полигонов с изменением статуса
+      const dateIndex = availableDates.indexOf(dateStr);
+      
+      if (id === "6dc44775-c39f-4928-acb5-c194397d07c8") {
+        const switchIndex = availableDates.indexOf("2022-03-29_14-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }
 
-    // Спец-обработка полигона 6dc44775
-  if (id === "6ee17f5e-4f2e-4cac-9d68-a669a35b556b") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-29_19-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }    
+      if (id === "6ee17f5e-4f2e-4cac-9d68-a669a35b556b") {
+        const switchIndex = availableDates.indexOf("2022-03-29_19-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }    
 
-    if (id === "3e3812f1-6b76-4599-8877-7eee51b14dd8") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-29_19-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }        
+      if (id === "3e3812f1-6b76-4599-8877-7eee51b14dd8") {
+        const switchIndex = availableDates.indexOf("2022-03-29_19-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }        
 
       if (id === "1bea946c-d720-4842-bb4f-3c1576f9a3ec") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }      
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }      
 
-       if (id === "62cd1f77-9467-459a-a489-39fd03034cac") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }      
+      if (id === "62cd1f77-9467-459a-a489-39fd03034cac") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }      
 
-         if (id === "31caf44b-632b-476a-8bf0-93bf9d45e9e8") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }      
+      if (id === "31caf44b-632b-476a-8bf0-93bf9d45e9e8") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }      
 
-           if (id === "4a635846-b315-4ef6-ba1e-728b5eb76d98") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }          
+      if (id === "4a635846-b315-4ef6-ba1e-728b5eb76d98") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }          
 
-            if (id === "c7bf8dae-1b72-48f4-aa51-d62e31f32268") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }            
+      if (id === "c7bf8dae-1b72-48f4-aa51-d62e31f32268") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }            
 
+      if (id === "2cdb7a21-da5a-4393-8972-91c4b30739a4") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }    
 
-                if (id === "2cdb7a21-da5a-4393-8972-91c4b30739a4") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }    
+      if (id === "747b8f95-8c3d-40b3-a806-a2a3ea96f78f") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }      
 
-                  if (id === "747b8f95-8c3d-40b3-a806-a2a3ea96f78f") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }      
+      if (id === "7a7efc17-c569-46e0-8ad9-3acea3152f2e") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }      
 
+      if (id === "1d234475-4fd9-466b-9f69-4e59e02ba756") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }     
 
-                   if (id === "7a7efc17-c569-46e0-8ad9-3acea3152f2e") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }      
+      if (id === "5bf99d3e-af7a-460e-a9e8-5965c7e86959") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }     
 
-                   if (id === "1d234475-4fd9-466b-9f69-4e59e02ba756") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }     
-
-
-                         if (id === "5bf99d3e-af7a-460e-a9e8-5965c7e86959") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }     
-
-                           if (id === "a74cd8d9-0994-4fab-82e7-14146f3a5d9a") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }     
+      if (id === "a74cd8d9-0994-4fab-82e7-14146f3a5d9a") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }     
     
-
-                             if (id === "14f624ef-2e2d-4f1a-9c2a-32e252fdbfeb") {
-    const dateIndex = availableDates.indexOf(dateStr);
-    const switchIndex = availableDates.indexOf("2022-03-30_17-00");
-    if (dateIndex === switchIndex) {
-      f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#d22b2b";
-    } else if (dateIndex > switchIndex) {
-      f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
-    }
-  }     
+      if (id === "14f624ef-2e2d-4f1a-9c2a-32e252fdbfeb") {
+        const switchIndex = availableDates.indexOf("2022-03-30_17-00");
+        if (dateIndex === switchIndex) {
+          f.properties.customName = "Оккупировано";
+          f.properties.fillColor = "#d22b2b";
+        } else if (dateIndex > switchIndex) {
+          f.properties.customName = "Освобождено";
+          f.properties.fillColor = "#3498db";
+        }
+      }     
         
-      
-  // Добавим площадь
-  try {
-    const area = turf.area(f);
-    f.properties.areaFormatted = formatArea(area);
-  } catch {}
-});
-
-
-// затем — блок с map.getSource...
-
-
+      // Добавим площадь
+      try {
+        const area = turf.area(f);
+        f.properties.areaFormatted = formatArea(area);
+      } catch {}
+    });
 
     if (map.getSource('war-zones')) {
       map.getSource('war-zones').setData(geojson);
@@ -550,36 +525,32 @@ document.getElementById('compare').onclick = () => {
   compareActive = true;
 };
 
-// Массив дат в формате, который понимает flatpickr
+// Подготовка дат для flatpickr
 const flatpickrDates = availableDates.map(d => {
   const [date, time] = d.split('_');
   return `${date} ${time.replace('-', ':')}`;
 });
 
-// Настройка flatpickr
-<script>
-flatpickr("#date-picker", {
-  dateFormat: "Y-m-d",
+// Инициализация flatpickr
+const datePicker = flatpickr("#date-picker", {
+  enable: flatpickrDates,
+  dateFormat: "Y-m-d H:i",
   onChange: function(selectedDates, dateStr) {
-    const closest = availableDates.find(d => d.startsWith(dateStr));
+    const formattedDate = dateStr.replace(' ', '_').replace(':', '-');
+    const closest = availableDates.find(d => d.startsWith(formattedDate));
     if (closest) {
       currentIndex = availableDates.indexOf(closest);
-      loadMap(closest);
+      updateDatePanel();
     }
   }
 });
 
+// Кнопка для открытия календаря
 document.getElementById("open-calendar").addEventListener("click", () => {
-  const picker = document.getElementById("date-picker");
-  picker.style.display = picker.style.display === "none" ? "block" : "none";
+  datePicker.open();
 });
-<script>
-  // Кнопка для открытия календаря
-  document.getElementById("open-calendar").onclick = () => {
-    document.getElementById("date-picker")._flatpickr.open();
-  };
 
-  map.on('load', updateDatePanel);
+map.on('load', updateDatePanel);
 </script>
 </body>
 </html>
