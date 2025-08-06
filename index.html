@@ -119,7 +119,7 @@ function formatArea(area) {
 }
 
 async function loadMap(dateStr) {
-  const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
+  const url = `https://vleddd.github.io/DeepMap/maps/map_${dateStr}.geojson`;
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -313,3 +313,4 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
+
