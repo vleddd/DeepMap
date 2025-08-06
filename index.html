@@ -120,72 +120,122 @@ function formatArea(area) {
 
 async function loadMap(dateStr) {
   const url = `https://vleddd.github.io/DeepMap/maps/map_${dateStr}.geojson`;
+  console.log("Загрузка данных с:", url);
+  
   try {
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
-    const geojson = await response.json();
-
-    previousGeojson = currentGeojson;
-    currentGeojson = geojson;
-
-    geojson.features.forEach(f => {
-      const id = f.id || f.properties.id;
-      if (idToName[id]) {
-        f.properties.customName = idToName[id];
-        f.properties.fillColor = "#b57edc";
-      } else if (occupiedIds.includes(id)) {
-        f.properties.customName = "Оккупировано";
-        f.properties.fillColor = "#d22b2b";
-      } else if (liberatedIds.includes(id)) {
-        f.properties.customName = "Освобождено";
-        f.properties.fillColor = "#3498db";
-      } else {
-        f.properties.customName = "(неизвестно)";
-        f.properties.fillColor = "#777";
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn("Файл данных не найден, используется тестовый набор");
+        useTestData();
+        return;
       }
-      f.properties.areaFormatted = formatArea(turf.area(f));
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const geojson = await response.json();
+    processGeoJSON(geojson);
+    
+  } catch (err) {
+    console.warn("Ошибка загрузки GeoJSON:", err.message);
+    useTestData();
+  }
+}
+
+function useTestData() {
+  const testGeojson = {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "id": "test-liberated",
+        "properties": {},
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[30.5, 50.5], [31.5, 50.5], [31.5, 49.5], [30.5, 49.5], [30.5, 50.5]]]
+        }
+      },
+      {
+        "type": "Feature",
+        "id": "test-occupied",
+        "properties": {},
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[32.0, 50.0], [33.0, 50.0], [33.0, 49.0], [32.0, 49.0], [32.0, 50.0]]]
+        }
+      }
+    ]
+  };
+  processGeoJSON(testGeojson);
+}
+
+function processGeoJSON(geojson) {
+  previousGeojson = currentGeojson;
+  currentGeojson = geojson;
+
+  geojson.features.forEach(f => {
+    const id = f.id || f.properties.id;
+    if (idToName[id]) {
+      f.properties.customName = idToName[id];
+      f.properties.fillColor = "#b57edc";
+    } else if (occupiedIds.includes(id)) {
+      f.properties.customName = "Оккупировано";
+      f.properties.fillColor = "#d22b2b";
+    } else if (liberatedIds.includes(id)) {
+      f.properties.customName = "Освобождено";
+      f.properties.fillColor = "#32CD32"; // Лаймово-зеленый цвет
+    } else {
+      f.properties.customName = "Неизвестный регион";
+      f.properties.fillColor = "#777";
+    }
+    f.properties.areaFormatted = formatArea(turf.area(f));
+  });
+
+  updateMapSource(geojson);
+}
+
+function updateMapSource(geojson) {
+  if (map.getSource('war-zones')) {
+    map.getSource('war-zones').setData(geojson);
+  } else {
+    map.addSource('war-zones', { type: 'geojson', data: geojson });
+    map.addLayer({
+      id: 'war-polygons',
+      type: 'fill',
+      source: 'war-zones',
+      paint: {
+        'fill-color': ['get', 'fillColor'],
+        'fill-opacity': 0.5
+      }
     });
 
-    if (map.getSource('war-zones')) {
-      map.getSource('war-zones').setData(geojson);
-    } else {
-      map.addSource('war-zones', { type: 'geojson', data: geojson });
-      map.addLayer({
-        id: 'war-polygons',
-        type: 'fill',
-        source: 'war-zones',
-        paint: {
-          'fill-color': ['get', 'fillColor'],
-          'fill-opacity': 0.4
-        }
-      });
+    map.addLayer({
+      id: 'war-outlines',
+      type: 'line',
+      source: 'war-zones',
+      paint: {
+        'line-color': ['get', 'fillColor'],
+        'line-width': 1
+      }
+    });
 
-      map.addLayer({
-        id: 'war-outlines',
-        type: 'line',
-        source: 'war-zones',
-        paint: {
-          'line-color': ['get', 'fillColor'],
-          'line-width': 1
-        }
-      });
-
-      map.on('click', 'war-polygons', (e) => {
-        const f = e.features[0];
-        new maplibregl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(`<h3>${f.properties.customName}</h3><p>Площадь: ${f.properties.areaFormatted}</p>`)
-          .addTo(map);
-      });
-    }
-  } catch (err) {
-    console.error("Ошибка загрузки GeoJSON:", err);
-    alert("Не удалось загрузить данные карты. Проверьте консоль для подробностей.");
+    map.on('click', 'war-polygons', (e) => {
+      const f = e.features[0];
+      new maplibregl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(`<h3>${f.properties.customName}</h3><p>Площадь: ${f.properties.areaFormatted}</p>`)
+        .addTo(map);
+    });
   }
 }
 
 function updateDatePanel() {
+  if (!map.isStyleLoaded()) {
+    setTimeout(updateDatePanel, 100);
+    return;
+  }
+
   const [date, time] = availableDates[currentIndex].split('_');
   document.getElementById('current-date').textContent = `${date} ${time.replace('-', ':')}`;
   loadMap(availableDates[currentIndex]);
@@ -205,21 +255,67 @@ document.getElementById('next').addEventListener('click', () => {
   }
 });
 
-document.getElementById('compare').addEventListener('click', () => {
+document.getElementById('compare').addEventListener('click', toggleCompare);
+
+function toggleCompare() {
   if (!previousGeojson || !currentGeojson) {
     alert("Нет данных для сравнения");
     return;
   }
 
   if (compareActive) {
-    ['change-fill', 'change-outline'].forEach(id => {
-      if (map.getLayer(id)) map.removeLayer(id);
-    });
-    if (map.getSource('changes')) map.removeSource('changes');
+    removeComparisonLayers();
     compareActive = false;
     return;
   }
 
+  showComparison();
+  compareActive = true;
+}
+
+function removeComparisonLayers() {
+  ['change-fill', 'change-outline'].forEach(id => {
+    if (map.getLayer(id)) map.removeLayer(id);
+  });
+  if (map.getSource('changes')) map.removeSource('changes');
+}
+
+function showComparison() {
+  const changes = calculateChanges();
+  
+  if (changes.length === 0) {
+    alert("Нет изменений для отображения");
+    return;
+  }
+
+  map.addSource('changes', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: changes }
+  });
+
+  map.addLayer({
+    id: 'change-fill',
+    type: 'fill',
+    source: 'changes',
+    paint: {
+      'fill-color': ['get', 'fillColor'],
+      'fill-opacity': 0.7
+    }
+  });
+
+  map.addLayer({
+    id: 'change-outline',
+    type: 'line',
+    source: 'changes',
+    paint: {
+      'line-color': ['get', 'fillColor'],
+      'line-width': 2,
+      'line-dasharray': [2, 2]
+    }
+  });
+}
+
+function calculateChanges() {
   const prevFeaturesMap = Object.fromEntries(
     previousGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
   );
@@ -241,14 +337,14 @@ document.getElementById('compare').addEventListener('click', () => {
       try {
         const diff = turf.difference(cur, prev);
         if (diff) {
-          const color = status === "Оккупировано" ? '#ff0000' : '#3498db';
+          const color = status === "Оккупировано" ? '#ff0000' : '#32CD32'; // Лаймово-зеленый для освобожденных
           changes.push({
             ...cur,
             geometry: diff.geometry,
             properties: {
               ...cur.properties,
               fillColor: color,
-              customName: `Расширение (${status})`
+              customName: `Изменение (${status})`
             }
           });
         }
@@ -258,56 +354,26 @@ document.getElementById('compare').addEventListener('click', () => {
     }
   }
 
-  if (changes.length === 0) {
-    alert("Нет изменений для отображения");
-    return;
-  }
-
-  map.addSource('changes', {
-    type: 'geojson',
-    data: { type: 'FeatureCollection', features: changes }
-  });
-
-  map.addLayer({
-    id: 'change-fill',
-    type: 'fill',
-    source: 'changes',
-    paint: {
-      'fill-color': ['get', 'fillColor'],
-      'fill-opacity': 0.5
-    }
-  });
-
-  map.addLayer({
-    id: 'change-outline',
-    type: 'line',
-    source: 'changes',
-    paint: {
-      'line-color': ['get', 'fillColor'],
-      'line-width': 2,
-      'line-dasharray': [2, 2]
-    }
-  });
-
-  compareActive = true;
-});
+  return changes;
+}
 
 map.on('load', () => {
+  console.log("Карта загружена");
   updateDatePanel();
   
-  // Добавляем навигационный контроль
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
-  
-  // Добавляем масштаб
   map.addControl(new maplibregl.ScaleControl({
     maxWidth: 100,
     unit: 'metric'
   }));
 });
 
+map.on('error', (e) => {
+  if (e.error && e.error.message.includes('Style is not done loading')) {
+    return;
+  }
+  console.error("Ошибка карты:", e.error);
 });
 </script>
 </body>
 </html>
-
-
