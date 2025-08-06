@@ -57,56 +57,57 @@ const idToName = {
   "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
 };
 
-const occupiedIds = ["2228d511-c4fe-488a-a4b6-19e8f8163b01",
-    "c94f60ce-f725-41fd-9fee-59d528f59a2a",
-    "c682ae45-c0f3-4966-ac2e-7d53534ab54a",
-    "18ed4fb6-c145-478f-baee-efa28b2601a5",
-    "2e1aacf8-b288-4067-8373-a6afecc8debe",
-    "4a635846-b315-4ef6-ba1e-728b5eb76d98",
-    "5885a5c6-9b23-4e22-8e42-d1edf8f3b301",
-    "c8b24166-6bee-480d-ab52-e5fcfbc9e28b",
-    "a62ed399-6dab-4593-a845-2eea4c20d798",
-    "14f624ef-2e2d-4f1a-9c2a-32e252fdbfeb",
-    "2cdb7a21-da5a-4393-8972-91c4b30739a4",
-    "64ce2e6f-00fc-4193-a4e9-6a76b2a03021",
-    "38be1fbf-fcb2-422e-a4e5-96010a2dc6e2",
-    "bb33f55a-d29e-4481-ba04-80df46de0115",
-    "22b8b8e8-394b-4625-b388-19cbdd597de5",
-    "62147c99-fe66-40f2-b4df-34621ed6d853",
-    "a74cd8d9-0994-4fab-82e7-14146f3a5d9a",
-    "470acd07-1405-496e-87f4-314f0f3b1ef2",
-    "5bf99d3e-af7a-460e-a9e8-5965c7e86959",
-    "1d234475-4fd9-466b-9f69-4e59e02ba756",
-    "c7bf8dae-1b72-48f4-aa51-d62e31f32268",
-    "7a7efc17-c569-46e0-8ad9-3acea3152f2e",
-    "747b8f95-8c3d-40b3-a806-a2a3ea96f78f",
-    "17e912ab-8e25-4bc9-b8f3-762bbd51e091",
-    "0a91537d-3b08-4008-a84d-5e1187fcbefb",
-    "6ee17f5e-4f2e-4cac-9d68-a669a35b556b",
-    "6dc44775-c39f-4928-acb5-c194397d07c8",
-    "3e3812f1-6b76-4599-8877-7eee51b14dd8",
-    "31caf44b-632b-476a-8bf0-93bf9d45e9e8",
-    "62cd1f77-9467-459a-a489-39fd03034cac",
-    "1bea946c-d720-4842-bb4f-3c1576f9a3ec"
-                    ];
+const occupiedIds = [
+  "2228d511-c4fe-488a-a4b6-19e8f8163b01",
+  "c94f60ce-f725-41fd-9fee-59d528f59a2a",
+  "c682ae45-c0f3-4966-ac2e-7d53534ab54a",
+  "18ed4fb6-c145-478f-baee-efa28b2601a5",
+  "2e1aacf8-b288-4067-8373-a6afecc8debe",
+  "4a635846-b315-4ef6-ba1e-728b5eb76d98",
+  "5885a5c6-9b23-4e22-8e42-d1edf8f3b301",
+  "c8b24166-6bee-480d-ab52-e5fcfbc9e28b",
+  "a62ed399-6dab-4593-a845-2eea4c20d798",
+  "14f624ef-2e2d-4f1a-9c2a-32e252fdbfeb",
+  "2cdb7a21-da5a-4393-8972-91c4b30739a4",
+  "64ce2e6f-00fc-4193-a4e9-6a76b2a03021",
+  "38be1fbf-fcb2-422e-a4e5-96010a2dc6e2",
+  "bb33f55a-d29e-4481-ba04-80df46de0115",
+  "22b8b8e8-394b-4625-b388-19cbdd597de5",
+  "62147c99-fe66-40f2-b4df-34621ed6d853",
+  "a74cd8d9-0994-4fab-82e7-14146f3a5d9a",
+  "470acd07-1405-496e-87f4-314f0f3b1ef2",
+  "5bf99d3e-af7a-460e-a9e8-5965c7e86959",
+  "1d234475-4fd9-466b-9f69-4e59e02ba756",
+  "c7bf8dae-1b72-48f4-aa51-d62e31f32268",
+  "7a7efc17-c569-46e0-8ad9-3acea3152f2e",
+  "747b8f95-8c3d-40b3-a806-a2a3ea96f78f",
+  "17e912ab-8e25-4bc9-b8f3-762bbd51e091",
+  "0a91537d-3b08-4008-a84d-5e1187fcbefb",
+  "6ee17f5e-4f2e-4cac-9d68-a669a35b556b",
+  "6dc44775-c39f-4928-acb5-c194397d07c8",
+  "3e3812f1-6b76-4599-8877-7eee51b14dd8",
+  "31caf44b-632b-476a-8bf0-93bf9d45e9e8",
+  "62cd1f77-9467-459a-a489-39fd03034cac",
+  "1bea946c-d720-4842-bb4f-3c1576f9a3ec"
+];
   
-const liberatedIds = ["26fd7b89-afba-437a-80b0-36be3856c0a2",
-    "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b",
-    "67987403-7883-42dc-9d1d-67c07201c4a1",
-    "05c73b06-5cdb-4682-8bdc-addbcc7ea942",
-    "7b53cfba-7daf-46e4-acf9-d7887238d7f3",
-    "223f7858-a5e8-48a5-ab37-f6d5d1730c72",
-    "a1afe8fc-ab63-4f99-bd83-3e286ec5475f",
-    "622e8f29-dbbd-4a82-9a9d-4a44bfc18508",
-    "95ac0eb8-a43c-4801-b770-cef34cded718",
-    "643d318e-d5fc-456d-93fb-dd9d7cecdbd0",
-    "b61529b0-4440-48cb-a52d-4f5a5b61965b",
-    "93408d72-d078-4b1b-ab6a-43fd27cf5217",
-    "3d029f3c-2386-4669-b25e-63e095fa41a0",                 
-                     ];
+const liberatedIds = [
+  "26fd7b89-afba-437a-80b0-36be3856c0a2",
+  "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b",
+  "67987403-7883-42dc-9d1d-67c07201c4a1",
+  "05c73b06-5cdb-4682-8bdc-addbcc7ea942",
+  "7b53cfba-7daf-46e4-acf9-d7887238d7f3",
+  "223f7858-a5e8-48a5-ab37-f6d5d1730c72",
+  "a1afe8fc-ab63-4f99-bd83-3e286ec5475f",
+  "622e8f29-dbbd-4a82-9a9d-4a44bfc18508",
+  "95ac0eb8-a43c-4801-b770-cef34cded718",
+  "643d318e-d5fc-456d-93fb-dd9d7cecdbd0",
+  "b61529b0-4440-48cb-a52d-4f5a5b61965b",
+  "93408d72-d078-4b1b-ab6a-43fd27cf5217",
+  "3d029f3c-2386-4669-b25e-63e095fa41a0"                 
+];
   
-const availableDates = ["2025-05-20_23-10"
-        ];
+const availableDates = ["2025-05-20_23-10"];
 
 let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
@@ -118,9 +119,11 @@ function formatArea(area) {
 }
 
 async function loadMap(dateStr) {
-  const url = https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson;
+  const url = `https://vleddd.github.io/DeepYouMap/maps/map_${dateStr}.geojson`;
   try {
     const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
     const geojson = await response.json();
 
     previousGeojson = currentGeojson;
@@ -158,6 +161,16 @@ async function loadMap(dateStr) {
         }
       });
 
+      map.addLayer({
+        id: 'war-outlines',
+        type: 'line',
+        source: 'war-zones',
+        paint: {
+          'line-color': ['get', 'fillColor'],
+          'line-width': 1
+        }
+      });
+
       map.on('click', 'war-polygons', (e) => {
         const f = e.features[0];
         new maplibregl.Popup()
@@ -168,30 +181,31 @@ async function loadMap(dateStr) {
     }
   } catch (err) {
     console.error("Ошибка загрузки GeoJSON:", err);
+    alert("Не удалось загрузить данные карты. Проверьте консоль для подробностей.");
   }
 }
 
 function updateDatePanel() {
   const [date, time] = availableDates[currentIndex].split('_');
-  document.getElementById('current-date').textContent = ${date} ${time.replace('-', ':')};
+  document.getElementById('current-date').textContent = `${date} ${time.replace('-', ':')}`;
   loadMap(availableDates[currentIndex]);
 }
 
-document.getElementById('prev').onclick = () => {
+document.getElementById('prev').addEventListener('click', () => {
   if (currentIndex > 0) {
     currentIndex--;
     updateDatePanel();
   }
-};
+});
 
-document.getElementById('next').onclick = () => {
+document.getElementById('next').addEventListener('click', () => {
   if (currentIndex < availableDates.length - 1) {
     currentIndex++;
     updateDatePanel();
   }
-};
+});
 
-document.getElementById('compare').onclick = () => {
+document.getElementById('compare').addEventListener('click', () => {
   if (!previousGeojson || !currentGeojson) {
     alert("Нет данных для сравнения");
     return;
@@ -206,8 +220,13 @@ document.getElementById('compare').onclick = () => {
     return;
   }
 
-  const prevFeaturesMap = Object.fromEntries(previousGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)]));
-  const currFeaturesMap = Object.fromEntries(currentGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)]));
+  const prevFeaturesMap = Object.fromEntries(
+    previousGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
+  );
+  
+  const currFeaturesMap = Object.fromEntries(
+    currentGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
+  );
 
   const changes = [];
 
@@ -219,20 +238,29 @@ document.getElementById('compare').onclick = () => {
     if (!["Оккупировано", "Освобождено"].includes(status)) continue;
 
     if (prev) {
-      const diff = turf.difference(cur, prev);
-      if (diff) {
-        const color = status === "Оккупировано" ? '#ff0000' : '#3498db';
-        changes.push({
-          ...cur,
-          geometry: diff.geometry,
-          properties: {
-            ...cur.properties,
-            fillColor: color,
-            customName: Расширение (${status})
-          }
-        });
+      try {
+        const diff = turf.difference(cur, prev);
+        if (diff) {
+          const color = status === "Оккупировано" ? '#ff0000' : '#3498db';
+          changes.push({
+            ...cur,
+            geometry: diff.geometry,
+            properties: {
+              ...cur.properties,
+              fillColor: color,
+              customName: `Расширение (${status})`
+            }
+          });
+        }
+      } catch (e) {
+        console.error(`Ошибка при сравнении полигона ${id}:`, e);
       }
     }
+  }
+
+  if (changes.length === 0) {
+    alert("Нет изменений для отображения");
+    return;
   }
 
   map.addSource('changes', {
@@ -262,9 +290,26 @@ document.getElementById('compare').onclick = () => {
   });
 
   compareActive = true;
-};
+});
 
-map.on('load', updateDatePanel);
+map.on('load', () => {
+  updateDatePanel();
+  
+  // Добавляем навигационный контроль
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  
+  // Добавляем масштаб
+  map.addControl(new maplibregl.ScaleControl({
+    maxWidth: 100,
+    unit: 'metric'
+  }));
+});
+
+// Обработка ошибок загрузки карты
+map.on('error', (e) => {
+  console.error("Ошибка карты:", e.error);
+  alert("Произошла ошибка при загрузке карты. Проверьте консоль для подробностей.");
+});
 </script>
 </body>
 </html>
