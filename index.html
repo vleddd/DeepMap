@@ -81,7 +81,6 @@ const occupiedIds = [
   "c7bf8dae-1b72-48f4-aa51-d62e31f32268",
   "7a7efc17-c569-46e0-8ad9-3acea3152f2e",
   "747b8f95-8c3d-40b3-a806-a2a3ea96f78f",
-  "17e912ab-8e25-4bc9-b8f3-762bbd51e091",
   "0a91537d-3b08-4008-a84d-5e1187fcbefb",
   "6ee17f5e-4f2e-4cac-9d68-a669a35b556b",
   "6dc44775-c39f-4928-acb5-c194397d07c8",
@@ -105,6 +104,13 @@ const liberatedIds = [
   "b61529b0-4440-48cb-a52d-4f5a5b61965b",
   "93408d72-d078-4b1b-ab6a-43fd27cf5217",
   "3d029f3c-2386-4669-b25e-63e095fa41a0"                 
+];
+
+// Добавьте сюда ID новых освобожденных территорий для лаймового цвета
+const newLiberatedIds = [
+  // Вставьте сюда ID полигонов, которые должны быть лаймового цвета
+  "418a53e5-49e1-4ba5-b451-c0e4f733d734",
+  "17e912ab-8e25-4bc9-b8f3-762bbd51e091"
 ];
   
 const availableDates = ["2025-05-20_23-10"];
@@ -149,7 +155,7 @@ function useTestData() {
     "features": [
       {
         "type": "Feature",
-        "id": "test-liberated",
+        "id": "test-liberated-old",
         "properties": {},
         "geometry": {
           "type": "Polygon",
@@ -158,11 +164,20 @@ function useTestData() {
       },
       {
         "type": "Feature",
-        "id": "test-occupied",
+        "id": "test-liberated-new",
         "properties": {},
         "geometry": {
           "type": "Polygon",
           "coordinates": [[[32.0, 50.0], [33.0, 50.0], [33.0, 49.0], [32.0, 49.0], [32.0, 50.0]]]
+        }
+      },
+      {
+        "type": "Feature",
+        "id": "test-occupied",
+        "properties": {},
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[32.5, 49.5], [33.5, 49.5], [33.5, 48.5], [32.5, 48.5], [32.5, 49.5]]]
         }
       }
     ]
@@ -182,9 +197,12 @@ function processGeoJSON(geojson) {
     } else if (occupiedIds.includes(id)) {
       f.properties.customName = "Оккупировано";
       f.properties.fillColor = "#d22b2b";
+    } else if (newLiberatedIds.includes(id)) {
+      f.properties.customName = "Новоосвобождено";
+      f.properties.fillColor = "#32CD32"; // Лаймовый цвет
     } else if (liberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#32CD32"; // Лаймово-зеленый цвет
+      f.properties.fillColor = "#3498db"; // Старый голубой цвет
     } else {
       f.properties.customName = "Неизвестный регион";
       f.properties.fillColor = "#777";
@@ -377,3 +395,4 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
+
