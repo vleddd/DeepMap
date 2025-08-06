@@ -204,7 +204,7 @@ function processGeoJSON(geojson) {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#3498db"; // Старый голубой цвет
     } else {
-      f.properties.customName = "Неизвестный регион";
+      f.properties.customName = "Под Вопросом";
       f.properties.fillColor = "#777";
     }
     f.properties.areaFormatted = formatArea(turf.area(f));
@@ -395,6 +395,7 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
+
 
 
 
