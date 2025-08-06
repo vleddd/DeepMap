@@ -199,7 +199,7 @@ function processGeoJSON(geojson) {
       f.properties.fillColor = "#d22b2b";
     } else if (newLiberatedIds.includes(id)) {
       f.properties.customName = "Новоосвобождено";
-      f.properties.fillColor = "#32CD32"; // Лаймовый цвет
+      f.properties.fillColor = "#008000"; // Лаймовый цвет
     } else if (liberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#3498db"; // Старый голубой цвет
@@ -395,4 +395,5 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
+
 
