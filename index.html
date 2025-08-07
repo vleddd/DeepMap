@@ -31,8 +31,6 @@
     #current-date {
       font-size: 16px;
       font-weight: bold;
-      min-width: 120px;
-      text-align: center;
     }
     
     .nav-button {
@@ -100,6 +98,7 @@
       display: none;
       flex-direction: column;
       overflow: hidden;
+      border: 2px solid #ddd;
     }
     
     #notifications-header {
@@ -109,6 +108,15 @@
       border-bottom: 1px solid #eee;
       background: #f8f8f8;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .update-time {
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+      font-weight: normal;
     }
     
     #notifications-content {
@@ -117,25 +125,26 @@
       flex-grow: 1;
     }
     
-    .update-day {
-      margin-bottom: 20px;
+    .update-container {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0;
+      margin-bottom: 15px;
+      overflow: hidden;
     }
     
     .update-date {
       font-size: 16px;
       font-weight: bold;
       color: #333;
-      margin-bottom: 10px;
-      padding-bottom: 5px;
-      border-bottom: 1px solid #eee;
+      padding: 10px 15px;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ddd;
     }
     
-    .update-item {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 10px;
+    .update-text {
+      padding: 12px 15px;
       line-height: 1.5;
     }
     
@@ -209,7 +218,7 @@
 <!-- Основные элементы управления -->
 <div id="date-container">
   <button class="nav-button" id="prev-btn">&lt;</button>
-  <span id="current-date"></span>
+  <span id="current-date">2025-05-20</span>
   <button class="nav-button" id="next-btn">&gt;</button>
   <button class="nav-button" id="compare-btn">&gt;&lt;</button>
 </div>
@@ -223,7 +232,10 @@
 <!-- Окно уведомлений -->
 <div class="overlay" id="notifications-overlay"></div>
 <div id="notifications-panel">
-  <div id="notifications-header">Обновление карты</div>
+  <div id="notifications-header">
+    Обновление карты
+    <span class="update-time">20 мая 2025, 23:10</span>
+  </div>
   <div id="notifications-content">
     <!-- Сюда будут вставляться обновления -->
   </div>
@@ -317,7 +329,7 @@ const newLiberatedIds = [
   
 const availableDates = ["2025-05-20_23-10"];
 
-// Данные обновлений (только 20 мая 2025)
+// Данные обновлений (20 мая 2025)
 const updates = [
   {
     date: "20 мая 2025",
@@ -477,9 +489,8 @@ function updateDatePanel() {
     return;
   }
 
-  const [date, time] = availableDates[currentIndex].split('_');
-  document.getElementById('current-date').textContent = `${date} ${time.replace('-', ':')}`;
-  loadMap(availableDates[currentIndex]);
+  const [date] = availableDates[currentIndex].split('_');
+  document.getElementById('current-date').textContent = date;
 }
 
 function toggleCompare() {
@@ -587,20 +598,20 @@ function renderUpdates() {
   content.innerHTML = '';
 
   updates.forEach(update => {
-    const dayContainer = document.createElement('div');
-    dayContainer.className = 'update-day';
+    const updateContainer = document.createElement('div');
+    updateContainer.className = 'update-container';
     
     const dateHeader = document.createElement('div');
     dateHeader.className = 'update-date';
     dateHeader.textContent = update.date;
-    dayContainer.appendChild(dateHeader);
-
+    updateContainer.appendChild(dateHeader);
+    
+    const textContainer = document.createElement('div');
+    textContainer.className = 'update-text';
+    
     update.changes.forEach(change => {
-      const updateItem = document.createElement('div');
-      updateItem.className = 'update-item';
-      
       const textNode = document.createTextNode(change.text);
-      updateItem.appendChild(textNode);
+      textContainer.appendChild(textNode);
       
       const cityLink = document.createElement('span');
       cityLink.className = 'city-link';
@@ -613,15 +624,14 @@ function renderUpdates() {
           zoom: change.zoom || 11,
           essential: true
         });
-        // Закрываем панель уведомлений после выбора города
         toggleNotifications();
       });
       
-      updateItem.appendChild(cityLink);
-      dayContainer.appendChild(updateItem);
+      textContainer.appendChild(cityLink);
     });
     
-    content.appendChild(dayContainer);
+    updateContainer.appendChild(textContainer);
+    content.appendChild(updateContainer);
   });
 }
 
