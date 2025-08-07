@@ -108,15 +108,6 @@
       border-bottom: 1px solid #eee;
       background: #f8f8f8;
       text-align: center;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .update-time {
-      font-size: 14px;
-      color: #666;
-      margin-top: 5px;
-      font-weight: normal;
     }
     
     #notifications-content {
@@ -134,13 +125,23 @@
       overflow: hidden;
     }
     
-    .update-date {
-      font-size: 16px;
-      font-weight: bold;
-      color: #333;
+    .update-header {
+      display: flex;
+      justify-content: space-between;
       padding: 10px 15px;
       background: #f0f0f0;
       border-bottom: 1px solid #ddd;
+    }
+    
+    .update-date {
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .update-time {
+      font-size: 14px;
+      color: #666;
     }
     
     .update-text {
@@ -210,6 +211,11 @@
       #notifications-panel {
         width: 95%;
       }
+      
+      .update-header {
+        flex-direction: column;
+        gap: 5px;
+      }
     }
   </style>
 </head>
@@ -232,10 +238,7 @@
 <!-- Окно уведомлений -->
 <div class="overlay" id="notifications-overlay"></div>
 <div id="notifications-panel">
-  <div id="notifications-header">
-    Обновление карты
-    <span class="update-time">20 мая 2025, 23:10</span>
-  </div>
+  <div id="notifications-header">Обновление карты</div>
   <div id="notifications-content">
     <!-- Сюда будут вставляться обновления -->
   </div>
@@ -255,7 +258,7 @@ const map = new maplibregl.Map({
   interactive: true
 });
 
-// Данные полигонов
+// Данные полигонов (полный список)
 const idToName = {
   "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
   "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
@@ -333,6 +336,7 @@ const availableDates = ["2025-05-20_23-10"];
 const updates = [
   {
     date: "20 мая 2025",
+    time: "23:10",
     changes: [
       {
         text: "рф продвинулись возле ",
@@ -597,19 +601,44 @@ function renderUpdates() {
   const content = document.getElementById('notifications-content');
   content.innerHTML = '';
 
+  // Группируем обновления по дате/времени
+  const groupedUpdates = {};
   updates.forEach(update => {
+    const key = `${update.date}_${update.time}`;
+    if (!groupedUpdates[key]) {
+      groupedUpdates[key] = {
+        date: update.date,
+        time: update.time,
+        changes: []
+      };
+    }
+    groupedUpdates[key].changes.push(...update.changes);
+  });
+
+  // Отображаем сгруппированные обновления
+  Object.values(groupedUpdates).forEach(group => {
     const updateContainer = document.createElement('div');
     updateContainer.className = 'update-container';
     
-    const dateHeader = document.createElement('div');
-    dateHeader.className = 'update-date';
-    dateHeader.textContent = update.date;
-    updateContainer.appendChild(dateHeader);
+    const header = document.createElement('div');
+    header.className = 'update-header';
+    
+    const dateElement = document.createElement('div');
+    dateElement.className = 'update-date';
+    dateElement.textContent = group.date;
+    
+    const timeElement = document.createElement('div');
+    timeElement.className = 'update-time';
+    timeElement.textContent = group.time;
+    
+    header.appendChild(dateElement);
+    header.appendChild(timeElement);
+    updateContainer.appendChild(header);
     
     const textContainer = document.createElement('div');
     textContainer.className = 'update-text';
     
-    update.changes.forEach(change => {
+    group.changes.forEach(change => {
       const textNode = document.createTextNode(change.text);
       textContainer.appendChild(textNode);
       
@@ -671,6 +700,7 @@ document.getElementById('notifications-overlay').addEventListener('click', toggl
 
 map.on('load', () => {
   updateDatePanel();
+  loadMap(availableDates[currentIndex]);
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
   map.addControl(new maplibregl.ScaleControl({
     maxWidth: 100,
