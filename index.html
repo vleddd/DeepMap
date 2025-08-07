@@ -11,31 +11,19 @@
     body { margin: 0; padding: 0; }
     #map { width: 100%; height: 100vh; }
     
-    /* Белая полоса внизу */
-    #bottom-panel {
+    /* Панель даты (ПК версия) */
+    #date-panel {
       position: absolute;
-      bottom: 10px;
+      top: 10px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(255,255,255,0.9);
       padding: 8px 16px;
-      border-radius: 15px;
-      z-index: 10;
-      font-family: Arial;
-      width: 90%;
-      max-width: 400px;
-      box-sizing: border-box;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-    
-    /* Панель даты */
-    #date-panel {
+      border-radius: 10px;
       display: flex;
       gap: 15px;
-      align-items: center;
+      z-index: 10;
+      font-family: Arial;
     }
     
     .date-button {
@@ -43,27 +31,22 @@
       cursor: pointer;
       background: none;
       border: none;
-      padding: 0 5px;
     }
     
     #current-date {
       font-size: 16px;
       font-weight: bold;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 150px;
     }
     
     /* Кнопка "i" */
     #info-button {
       position: absolute;
-      right: 10px;
+      left: 10px;
       top: 10px;
-      width: 36px;
-      height: 36px;
+      width: 30px;
+      height: 30px;
       background: rgba(255,255,255,0.9);
-      border-radius: 10px;
+      border-radius: 50%;
       border: none;
       font-size: 18px;
       font-weight: bold;
@@ -75,31 +58,40 @@
       box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
     
-    /* Белая полоса сверху (рамка) */
-    #top-frame {
+    /* Белая полоса слева (только для ПК) */
+    #left-frame {
       position: absolute;
-      top: 0;
       left: 0;
-      right: 0;
-      height: 50px;
+      top: 0;
+      bottom: 0;
+      width: 50px;
       background: rgba(255,255,255,0.9);
       z-index: 5;
-      display: none; /* Пока скрыта */
     }
     
-    /* Адаптация для мобильных */
+    /* Мобильная версия */
     @media (max-width: 768px) {
-      #bottom-panel {
+      #left-frame {
+        display: none;
+      }
+      
+      #date-panel {
+        top: auto;
         bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 400px;
         padding: 10px 15px;
       }
       
       #info-button {
+        left: auto;
         right: 15px;
         top: 15px;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
       }
       
       .date-button {
@@ -107,18 +99,17 @@
       }
       
       #current-date {
-        font-size: 18px;
-        max-width: 180px;
+        font-size: 14px;
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
     
     @media (max-width: 480px) {
-      #bottom-panel {
-        width: 95%;
-        padding: 8px 12px;
-      }
-      
       #date-panel {
+        padding: 8px 12px;
         gap: 10px;
       }
       
@@ -127,7 +118,7 @@
       }
       
       #current-date {
-        font-size: 14px;
+        font-size: 12px;
         max-width: 120px;
       }
     }
@@ -135,20 +126,18 @@
 </head>
 <body>
 
-<!-- Белая полоса сверху (рамка) -->
-<div id="top-frame"></div>
+<!-- Белая полоса слева (только для ПК) -->
+<div id="left-frame"></div>
 
-<!-- Панель управления внизу -->
-<div id="bottom-panel">
-  <div id="date-panel">
-    <button class="date-button" id="prev">&lt;</button>
-    <span id="current-date"></span>
-    <button class="date-button" id="next">&gt;</button>
-  </div>
+<!-- Панель управления -->
+<div id="date-panel">
+  <button class="date-button" id="prev">&lt;</button>
+  <span id="current-date"></span>
   <button class="date-button" id="compare">&gt;&lt;</button>
+  <button class="date-button" id="next">&gt;</button>
 </div>
 
-<!-- Кнопка "i" в правом верхнем углу -->
+<!-- Кнопка "i" -->
 <button id="info-button" title="Информация">i</button>
 
 <div id="map"></div>
@@ -158,22 +147,84 @@ const map = new maplibregl.Map({
   container: 'map',
   style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
   center: [31.1656, 48.3794],
-  zoom: 5.5,
+  zoom: 6,
   touchZoomRotate: true,
   interactive: true
 });
 
-// Упрощенные данные
 const idToName = {
   "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
   "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
 };
 
-const occupiedIds = ["22b8b8e8-394b-4625-b388-19cbdd597de5", "e7756804-6807-44a9-8110-c6ab01dda52a"];
-const liberatedIds = ["e1682ab0-a5db-47fd-98b1-9be95133d6e6"];
-const newLiberatedIds = ["418a53e5-49e1-4ba5-b451-c0e4f733d734", "17e912ab-8e25-4bc9-b8f3-762bbd51e091"];
+const occupiedIds = [
+  "22b8b8e8-394b-4625-b388-19cbdd597de5",
+  "e7756804-6807-44a9-8110-c6ab01dda52a",
+  "ffe28d26-b43a-4d92-8ffc-b1f8c4f182a5",
+  "18ed4fb6-c145-478f-baee-efa28b2601a5",
+  "38be1fbf-fcb2-422e-a4e5-96010a2dc6e2",
+  "c22a11ea-d574-4375-9e40-01cc2ddaaba6",
+  "259453df-e959-446e-92c5-f5d38366827b",
+  "6146b2fb-45c0-4234-a4ac-04d0e1bea555",
+  "0af67c7e-2f75-4c7a-8db6-b83eebb4c107"
+];
+  
+const liberatedIds = [
+  "e1682ab0-a5db-47fd-98b1-9be95133d6e6"                
+];
 
+const newLiberatedIds = [
+  "418a53e5-49e1-4ba5-b451-c0e4f733d734",
+  "17e912ab-8e25-4bc9-b8f3-762bbd51e091",
+  "1c4aff4e-d285-44d5-8fa1-c72a596f4d59",
+  "5355500b-cbb9-44e0-9d51-711a77b5cf88",
+  "8f9456f1-190b-436f-9909-3acd4860a477",
+  "3d029f3c-2386-4669-b25e-63e095fa41a0",
+  "67987403-7883-42dc-9d1d-67c07201c4a1",
+  "05c73b06-5cdb-4682-8bdc-addbcc7ea942",
+  "7b53cfba-7daf-46e4-acf9-d7887238d7f3",
+  "223f7858-a5e8-48a5-ab37-f6d5d1730c72",
+  "c35233d7-7e84-48e8-97a3-9eafbb5564fd",
+  "bd0b2d90-7876-44b2-9fa4-a88bac1470dd",
+  "0d093787-50b9-44c0-89bf-8a37159a2e3a",
+  "622e8f29-dbbd-4a82-9a9d-4a44bfc18508",
+  "5786b949-03f9-4905-ab8d-ee567b0d5609",
+  "7e583cc6-66e8-471f-a714-cd27d434f502",
+  "6d0eb43b-b2d7-43d4-be90-843e960bbd33",
+  "e85b0388-d74b-4afa-aacc-a8dfe808566e",
+  "00c2c646-dab5-4a76-b981-b9b37951844e",
+  "c5b0a0cb-3b25-4fc8-a31f-716bc5f2ddc2",
+  "77d858b3-c2da-4d3f-897e-22b93ad60865",
+  "fe02e45c-ff52-4d13-96f9-011418e2b5b4",
+  "192567e1-e846-44a2-b7b9-120f8534ac80",
+  "c3d60a66-ef4f-4431-abcd-f944e3c9fcdd",
+  "0ae4a1c0-0f6e-4ea3-a588-d051cc8f9c5e",
+  "c40edaaf-8210-4168-816c-f252df0bbd11",
+  "a1afe8fc-ab63-4f99-bd83-3e286ec5475f",
+  "643d318e-d5fc-456d-93fb-dd9d7cecdbd0",
+  "2cf3500f-867a-4846-a2f1-095ceecadb1f",
+  "c588e5ae-3233-4a0f-a019-12d7953f79ef",
+  "79fae843-9bbc-4532-8dca-17ed7822ca29",
+  "4a635846-b315-4ef6-ba1e-728b5eb76d98",
+  "31caf44b-632b-476a-8bf0-93bf9d45e9e8",
+  "62cd1f77-9467-459a-a489-39fd03034cac",
+  "1bea946c-d720-4842-bb4f-3c1576f9a3ec",
+  "14f624ef-2e2d-4f1a-9c2a-32e252fdbfeb",
+  "a74cd8d9-0994-4fab-82e7-14146f3a5d9a",
+  "1d234475-4fd9-466b-9f69-4e59e02ba756",
+  "5bf99d3e-af7a-460e-a9e8-5965c7e86959",
+  "c7bf8dae-1b72-48f4-aa51-d62e31f32268",
+  "3e3812f1-6b76-4599-8877-7eee51b14dd8",
+  "6ee17f5e-4f2e-4cac-9d68-a669a35b556b",
+  "6dc44775-c39f-4928-acb5-c194397d07c8",
+  "7a7efc17-c569-46e0-8ad9-3acea3152f2e",
+  "2cdb7a21-da5a-4393-8972-91c4b30739a4",
+  "747b8f95-8c3d-40b3-a806-a2a3ea96f78f",
+  "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b"
+];
+  
 const availableDates = ["2025-05-20_23-10"];
+
 let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
 let previousGeojson = null;
@@ -184,12 +235,26 @@ function formatArea(area) {
 }
 
 async function loadMap(dateStr) {
+  const url = `https://vleddd.github.io/DeepMap/maps/map_${dateStr}.geojson`;
+  console.log("Загрузка данных с:", url);
+  
   try {
-    const response = await fetch(`https://vleddd.github.io/DeepMap/maps/map_${dateStr}.geojson`);
-    if (!response.ok) throw new Error();
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn("Файл данных не найден, используется тестовый набор");
+        useTestData();
+        return;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const geojson = await response.json();
     processGeoJSON(geojson);
-  } catch {
+    
+  } catch (err) {
+    console.warn("Ошибка загрузки GeoJSON:", err.message);
     useTestData();
   }
 }
@@ -200,11 +265,20 @@ function useTestData() {
     "features": [
       {
         "type": "Feature",
-        "id": "test-liberated",
+        "id": "test-liberated-old",
         "properties": {},
         "geometry": {
           "type": "Polygon",
           "coordinates": [[[30.5, 50.5], [31.5, 50.5], [31.5, 49.5], [30.5, 49.5], [30.5, 50.5]]]
+        }
+      },
+      {
+        "type": "Feature",
+        "id": "test-liberated-new",
+        "properties": {},
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[32.0, 50.0], [33.0, 50.0], [33.0, 49.0], [32.0, 49.0], [32.0, 50.0]]]
         }
       },
       {
@@ -275,9 +349,10 @@ function updateMapSource(geojson) {
     });
 
     map.on('click', 'war-polygons', (e) => {
+      const f = e.features[0];
       new maplibregl.Popup()
         .setLngLat(e.lngLat)
-        .setHTML(`<h3>${e.features[0].properties.customName}</h3><p>Площадь: ${e.features[0].properties.areaFormatted}</p>`)
+        .setHTML(`<h3>${f.properties.customName}</h3><p>Площадь: ${f.properties.areaFormatted}</p>`)
         .addTo(map);
     });
   }
@@ -370,11 +445,11 @@ function showComparison() {
 
 function calculateChanges() {
   const prevFeaturesMap = Object.fromEntries(
-    (previousGeojson.features || []).map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
+    previousGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
   );
   
   const currFeaturesMap = Object.fromEntries(
-    (currentGeojson.features || []).map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
+    currentGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
   );
 
   const changes = [];
@@ -411,12 +486,20 @@ function calculateChanges() {
 }
 
 map.on('load', () => {
+  console.log("Карта загружена");
   updateDatePanel();
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  map.addControl(new maplibregl.ScaleControl({
+    maxWidth: 100,
+    unit: 'metric'
+  }));
 });
 
 map.on('error', (e) => {
-  if (e.error && e.error.message.includes('Style is not done loading')) return;
+  if (e.error && e.error.message.includes('Style is not done loading')) {
+    return;
+  }
   console.error("Ошибка карты:", e.error);
 });
 </script>
