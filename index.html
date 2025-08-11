@@ -517,14 +517,10 @@ function updateMapSource(geojson) {
   }
 }
 
-function updateDatePanel() {
-  if (!map.isStyleLoaded()) {
-    setTimeout(updateDatePanel, 100);
-    return;
-  }
-
-  const [date] = availableDates[currentIndex].split('_');
-  document.getElementById('current-date').textContent = date;
+function loadCurrentDate() {
+  const dateStr = availableDates[currentIndex];
+  document.getElementById('current-date').textContent = dateStr.split('_')[0];
+  loadMap(dateStr);
 }
 
 function toggleCompare() {
@@ -712,14 +708,20 @@ function toggleNotifications() {
 document.getElementById('prev-btn').addEventListener('click', () => {
   if (currentIndex > 0) {
     currentIndex--;
-    updateDatePanel();
+    loadCurrentDate();
+    if (compareActive) {
+      toggleCompare();
+    }
   }
 });
 
 document.getElementById('next-btn').addEventListener('click', () => {
   if (currentIndex < availableDates.length - 1) {
     currentIndex++;
-    updateDatePanel();
+    loadCurrentDate();
+    if (compareActive) {
+      toggleCompare();
+    }
   }
 });
 
@@ -729,8 +731,7 @@ document.getElementById('close-notifications').addEventListener('click', toggleN
 document.getElementById('notifications-overlay').addEventListener('click', toggleNotifications);
 
 map.on('load', () => {
-  updateDatePanel();
-  loadMap(availableDates[currentIndex]);
+  loadCurrentDate();
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
   map.addControl(new maplibregl.ScaleControl({
     maxWidth: 100,
@@ -747,14 +748,3 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
