@@ -387,7 +387,7 @@ const updates = [
 let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
 let previousDateGeojson = null;
-let compareActive = true;
+let compareActive = false;
 
 function showLoading() {
   document.getElementById('loading-indicator').style.display = 'block';
@@ -462,12 +462,10 @@ function processGeoJSON(geojson) {
 
   updateMapSource(geojson);
   
-  // Автоматически показываем сравнение после загрузки
-  if (previousDateGeojson && compareActive) {
-    showComparison();
-  }
-}
-
+// Автоматическое сравнение теперь отключено
+// if (previousDateGeojson && compareActive) {
+//   showComparison();
+// }
 function updateMapSource(geojson) {
   if (map.getSource('war-zones')) {
     map.getSource('war-zones').setData(geojson);
@@ -739,3 +737,4 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
+
