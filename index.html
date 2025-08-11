@@ -11,7 +11,6 @@
     body { margin: 0; padding: 0; }
     #map { width: 100%; height: 100vh; }
     
-    /* Стили панели управления */
     #date-container {
       position: absolute;
       top: 10px;
@@ -51,7 +50,6 @@
       background: rgba(0,0,0,0.1);
     }
     
-    /* Стили кнопок управления */
     #left-controls {
       position: absolute;
       top: 10px;
@@ -82,7 +80,6 @@
       transform: scale(1.1);
     }
     
-    /* Стили окна уведомлений */
     #notifications-panel {
       position: absolute;
       top: 50%;
@@ -188,7 +185,6 @@
       display: none;
     }
     
-    /* Адаптация для мобильных */
     @media (max-width: 768px) {
       #date-container {
         top: auto;
@@ -217,11 +213,24 @@
         gap: 5px;
       }
     }
+
+    .loading-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.9);
+      padding: 15px 25px;
+      border-radius: 8px;
+      z-index: 1000;
+      font-family: Arial;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      display: none;
+    }
   </style>
 </head>
 <body>
 
-<!-- Основные элементы управления -->
 <div id="date-container">
   <button class="nav-button" id="prev-btn">&lt;</button>
   <span id="current-date">20.05.2025</span>
@@ -229,19 +238,17 @@
   <button class="nav-button" id="compare-btn">&gt;&lt;</button>
 </div>
 
-<!-- Левая панель управления -->
 <div id="left-controls">
   <button id="info-btn" class="control-button" title="Информация">i</button>
   <button id="notifications-btn" class="control-button" title="Обновления">🔔</button>
 </div>
 
-<!-- Окно уведомлений -->
+<div class="loading-indicator" id="loading-indicator">Загрузка данных...</div>
+
 <div class="overlay" id="notifications-overlay"></div>
 <div id="notifications-panel">
   <div id="notifications-header">Обновление карты</div>
-  <div id="notifications-content">
-    <!-- Сюда будут вставляться обновления -->
-  </div>
+  <div id="notifications-content"></div>
   <div id="close-notifications">Закрыть</div>
 </div>
 
@@ -258,7 +265,7 @@ const map = new maplibregl.Map({
   interactive: true
 });
 
-// Данные полигонов (полный список)
+// Данные полигонов
 const idToName = {
   "80c27733-0eea-4845-93f5-e8938d4a79b3": "Крым",
   "5cdb851b-4447-41b6-ae6f-a134e8b00236": "ЛДНР"
@@ -277,9 +284,7 @@ const occupiedIds = [
   "9e30e9e9-67f4-4447-9e40-283538ff1250"
 ];
   
-const liberatedIds = [
-  "e1682ab0-a5db-47fd-98b1-9be95133d6e6"                
-];
+const liberatedIds = ["e1682ab0-a5db-47fd-98b1-9be95133d6e6"];
 
 const newLiberatedIds = [
   "418a53e5-49e1-4ba5-b451-c0e4f733d734",
@@ -332,16 +337,14 @@ const newLiberatedIds = [
   "30085aba-f8b3-4707-abcf-c62e41f8a638"
 ];
 
-const liberatedRus = ["bbd7ed2a-b335-41b1-a9b8-efdc07385c52",
-                      "b67f94f4-3b24-4205-b44b-4ef3c33f70c7",
-                      "a9ffd521-0412-4c0c-bc97-f9f257b38d1c",
-                       ];
+const liberatedRus = [
+  "bbd7ed2a-b335-41b1-a9b8-efdc07385c52",
+  "b67f94f4-3b24-4205-b44b-4ef3c33f70c7",
+  "a9ffd521-0412-4c0c-bc97-f9f257b38d1c"
+];
   
-const availableDates = ["20.05.2025_23-10",
-                        "21.05.2025_23-56",
-                       ];
+const availableDates = ["20.05.2025_23-10", "21.05.2025_23-56"];
 
-// Данные обновлений (20 мая 2025)
 const updates = [
   {
     date: "20 мая 2025",
@@ -361,7 +364,7 @@ const updates = [
       }
     ]
   },
-    {
+  {
     date: "21 мая 2025",
     time: "23:10",
     changes: [
@@ -383,76 +386,54 @@ const updates = [
 
 let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
-let previousGeojson = null;
-let compareActive = false;
+let previousDateGeojson = null;
+let compareActive = true;
+
+function showLoading() {
+  document.getElementById('loading-indicator').style.display = 'block';
+}
+
+function hideLoading() {
+  document.getElementById('loading-indicator').style.display = 'none';
+}
 
 function formatArea(area) {
   return (area / 1e6).toFixed(2) + ' км²';
 }
 
-async function loadMap(dateStr) {
+async function loadMap(dateStr, isPrevious = false) {
+  showLoading();
   const url = `https://vleddd.github.io/DeepMap/maps/map_${dateStr}.geojson`;
-  console.log("Загрузка данных с:", url);
   
   try {
     const response = await fetch(url);
     
     if (!response.ok) {
       if (response.status === 404) {
-        console.warn("Файл данных не найден, используется тестовый набор");
-        useTestData();
-        return;
+        console.warn("Файл данных не найден");
+        return null;
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const geojson = await response.json();
-    processGeoJSON(geojson);
+    
+    if (isPrevious) {
+      return geojson;
+    } else {
+      processGeoJSON(geojson);
+      return geojson;
+    }
     
   } catch (err) {
     console.warn("Ошибка загрузки GeoJSON:", err.message);
-    useTestData();
+    return null;
+  } finally {
+    hideLoading();
   }
 }
 
-function useTestData() {
-  const testGeojson = {
-    "type": "FeatureCollection",
-    "features": [
-      {
-        "type": "Feature",
-        "id": "test-liberated-old",
-        "properties": {},
-        "geometry": {
-          "type": "Polygon",
-          "coordinates": [[[30.5, 50.5], [31.5, 50.5], [31.5, 49.5], [30.5, 49.5], [30.5, 50.5]]]
-        }
-      },
-      {
-        "type": "Feature",
-        "id": "test-liberated-new",
-        "properties": {},
-        "geometry": {
-          "type": "Polygon",
-          "coordinates": [[[32.0, 50.0], [33.0, 50.0], [33.0, 49.0], [32.0, 49.0], [32.0, 50.0]]]
-        }
-      },
-      {
-        "type": "Feature",
-        "id": "test-occupied",
-        "properties": {},
-        "geometry": {
-          "type": "Polygon",
-          "coordinates": [[[32.5, 49.5], [33.5, 49.5], [33.5, 48.5], [32.5, 48.5], [32.5, 49.5]]]
-        }
-      }
-    ]
-  };
-  processGeoJSON(testGeojson);
-}
-
 function processGeoJSON(geojson) {
-  previousGeojson = currentGeojson;
   currentGeojson = geojson;
 
   geojson.features.forEach(f => {
@@ -469,7 +450,7 @@ function processGeoJSON(geojson) {
     } else if (liberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#3498db";
-     } else if (liberatedRus.includes(id)) {
+    } else if (liberatedRus.includes(id)) {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#1637CC";
     } else {
@@ -480,6 +461,11 @@ function processGeoJSON(geojson) {
   });
 
   updateMapSource(geojson);
+  
+  // Автоматически показываем сравнение после загрузки
+  if (previousDateGeojson && compareActive) {
+    showComparison();
+  }
 }
 
 function updateMapSource(geojson) {
@@ -517,26 +503,35 @@ function updateMapSource(geojson) {
   }
 }
 
-function loadCurrentDate() {
+async function loadCurrentDate() {
   const dateStr = availableDates[currentIndex];
   document.getElementById('current-date').textContent = dateStr.split('_')[0];
-  loadMap(dateStr);
+  
+  // Загружаем предыдущую дату, если она есть
+  if (currentIndex > 0) {
+    const prevDateStr = availableDates[currentIndex - 1];
+    previousDateGeojson = await loadMap(prevDateStr, true);
+  } else {
+    previousDateGeojson = null;
+  }
+  
+  // Загружаем текущую дату
+  await loadMap(dateStr);
 }
 
 function toggleCompare() {
-  if (!previousGeojson || !currentGeojson) {
-    alert("Нет данных для сравнения");
-    return;
-  }
-
-  if (compareActive) {
+  compareActive = !compareActive;
+  
+  if (compareActive && previousDateGeojson && currentGeojson) {
+    showComparison();
+  } else {
     removeComparisonLayers();
-    compareActive = false;
-    return;
   }
-
-  showComparison();
-  compareActive = true;
+  
+  // Обновляем стиль кнопки
+  document.getElementById('compare-btn').style.backgroundColor = compareActive 
+    ? 'rgba(0, 150, 255, 0.2)' 
+    : '';
 }
 
 function removeComparisonLayers() {
@@ -547,10 +542,12 @@ function removeComparisonLayers() {
 }
 
 function showComparison() {
+  removeComparisonLayers();
+  
   const changes = calculateChanges();
   
-  if (changes.length === 0) {
-    alert("Нет изменений для отображения");
+  if (!changes || changes.length === 0) {
+    console.log("Нет изменений для отображения");
     return;
   }
 
@@ -565,7 +562,7 @@ function showComparison() {
     source: 'changes',
     paint: {
       'fill-color': ['get', 'fillColor'],
-      'fill-opacity': 0.4
+      'fill-opacity': 0.7
     }
   });
 
@@ -582,40 +579,42 @@ function showComparison() {
 }
 
 function calculateChanges() {
-  const prevFeaturesMap = Object.fromEntries(
-    previousGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
-  );
+  if (!previousDateGeojson || !currentGeojson) return [];
+
+  const prevFeaturesMap = {};
+  previousDateGeojson.features.forEach(f => {
+    const id = f.id || f.properties.id;
+    prevFeaturesMap[id] = turf.cleanCoords(f);
+  });
   
-  const currFeaturesMap = Object.fromEntries(
-    currentGeojson.features.map(f => [f.id || f.properties.id, turf.cleanCoords(f)])
-  );
+  const currFeaturesMap = {};
+  currentGeojson.features.forEach(f => {
+    const id = f.id || f.properties.id;
+    currFeaturesMap[id] = turf.cleanCoords(f);
+  });
 
   const changes = [];
 
-  for (const id in currFeaturesMap) {
-    const cur = currFeaturesMap[id];
-    const prev = prevFeaturesMap[id];
-    const status = cur.properties.customName;
-
-    if (!["Оккупировано", "Освобождено"].includes(status)) continue;
-
-    if (prev) {
+  // Находим изменения для всех типов территорий
+  const allIds = [...occupiedIds, ...liberatedIds, ...newLiberatedIds, ...liberatedRus];
+  
+  for (const id of allIds) {
+    if (currFeaturesMap[id] && prevFeaturesMap[id]) {
       try {
-        const diff = turf.difference(cur, prev);
+        const diff = turf.difference(currFeaturesMap[id], prevFeaturesMap[id]);
         if (diff) {
-          const color = status === "Оккупировано" ? '#ff0000' : '#32CD32';
           changes.push({
-            ...cur,
+            ...currFeaturesMap[id],
             geometry: diff.geometry,
             properties: {
-              ...cur.properties,
-              fillColor: color,
-              customName: `Изменение (${status})`
+              ...currFeaturesMap[id].properties,
+              fillColor: currFeaturesMap[id].properties.fillColor,
+              customName: `Изменение (${currFeaturesMap[id].properties.customName})`
             }
           });
         }
       } catch (e) {
-        console.error(`Ошибка при сравнении полигона ${id}:`, e);
+        console.error(`Ошибка сравнения полигона ${id}:`, e);
       }
     }
   }
@@ -627,7 +626,6 @@ function renderUpdates() {
   const content = document.getElementById('notifications-content');
   content.innerHTML = '';
 
-  // Группируем обновления по дате/времени
   const groupedUpdates = {};
   updates.forEach(update => {
     const key = `${update.date}_${update.time}`;
@@ -641,7 +639,6 @@ function renderUpdates() {
     groupedUpdates[key].changes.push(...update.changes);
   });
 
-  // Отображаем сгруппированные обновления
   Object.values(groupedUpdates).forEach(group => {
     const updateContainer = document.createElement('div');
     updateContainer.className = 'update-container';
@@ -705,23 +702,17 @@ function toggleNotifications() {
 }
 
 // Инициализация
-document.getElementById('prev-btn').addEventListener('click', () => {
+document.getElementById('prev-btn').addEventListener('click', async () => {
   if (currentIndex > 0) {
     currentIndex--;
-    loadCurrentDate();
-    if (compareActive) {
-      toggleCompare();
-    }
+    await loadCurrentDate();
   }
 });
 
-document.getElementById('next-btn').addEventListener('click', () => {
+document.getElementById('next-btn').addEventListener('click', async () => {
   if (currentIndex < availableDates.length - 1) {
     currentIndex++;
-    loadCurrentDate();
-    if (compareActive) {
-      toggleCompare();
-    }
+    await loadCurrentDate();
   }
 });
 
@@ -730,8 +721,8 @@ document.getElementById('notifications-btn').addEventListener('click', toggleNot
 document.getElementById('close-notifications').addEventListener('click', toggleNotifications);
 document.getElementById('notifications-overlay').addEventListener('click', toggleNotifications);
 
-map.on('load', () => {
-  loadCurrentDate();
+map.on('load', async () => {
+  await loadCurrentDate();
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
   map.addControl(new maplibregl.ScaleControl({
     maxWidth: 100,
@@ -748,4 +739,3 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
-
