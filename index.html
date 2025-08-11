@@ -213,20 +213,6 @@
         gap: 5px;
       }
     }
-
-    .loading-indicator {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(255,255,255,0.9);
-      padding: 15px 25px;
-      border-radius: 8px;
-      z-index: 1000;
-      font-family: Arial;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      display: none;
-    }
   </style>
 </head>
 <body>
@@ -242,8 +228,6 @@
   <button id="info-btn" class="control-button" title="Информация">i</button>
   <button id="notifications-btn" class="control-button" title="Обновления">🔔</button>
 </div>
-
-<div class="loading-indicator" id="loading-indicator">Загрузка данных...</div>
 
 <div class="overlay" id="notifications-overlay"></div>
 <div id="notifications-panel">
@@ -387,22 +371,13 @@ const updates = [
 let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
 let previousDateGeojson = null;
-let compareActive = false;
-
-function showLoading() {
-  document.getElementById('loading-indicator').style.display = 'block';
-}
-
-function hideLoading() {
-  document.getElementById('loading-indicator').style.display = 'none';
-}
+let compareActive = false; // Отключаем автосравнение
 
 function formatArea(area) {
   return (area / 1e6).toFixed(2) + ' км²';
 }
 
 async function loadMap(dateStr, isPrevious = false) {
-  showLoading();
   const url = `https://vleddd.github.io/DeepMap/maps/map_${dateStr}.geojson`;
   
   try {
@@ -428,8 +403,6 @@ async function loadMap(dateStr, isPrevious = false) {
   } catch (err) {
     console.warn("Ошибка загрузки GeoJSON:", err.message);
     return null;
-  } finally {
-    hideLoading();
   }
 }
 
@@ -461,11 +434,8 @@ function processGeoJSON(geojson) {
   });
 
   updateMapSource(geojson);
-  
-// Автоматическое сравнение теперь отключено
-// if (previousDateGeojson && compareActive) {
-//   showComparison();
-// }
+}
+
 function updateMapSource(geojson) {
   if (map.getSource('war-zones')) {
     map.getSource('war-zones').setData(geojson);
@@ -525,11 +495,6 @@ function toggleCompare() {
   } else {
     removeComparisonLayers();
   }
-  
-  // Обновляем стиль кнопки
-  document.getElementById('compare-btn').style.backgroundColor = compareActive 
-    ? 'rgba(0, 150, 255, 0.2)' 
-    : '';
 }
 
 function removeComparisonLayers() {
@@ -737,4 +702,3 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
-
