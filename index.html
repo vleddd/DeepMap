@@ -327,8 +327,14 @@ const newLiberatedIds = [
   "7a7efc17-c569-46e0-8ad9-3acea3152f2e",
   "2cdb7a21-da5a-4393-8972-91c4b30739a4",
   "747b8f95-8c3d-40b3-a806-a2a3ea96f78f",
-  "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b"
+  "c3527e63-cca7-49bb-bc17-13bbf6f6ba9b",
+  "30085aba-f8b3-4707-abcf-c62e41f8a638"
 ];
+
+const liberatedRus = ["bbd7ed2a-b335-41b1-a9b8-efdc07385c52",
+                      "b67f94f4-3b24-4205-b44b-4ef3c33f70c7",
+                      "a9ffd521-0412-4c0c-bc97-f9f257b38d1c",
+                       ];
   
 const availableDates = ["20.05.2025_23-10",
                        ];
@@ -461,6 +467,9 @@ function processGeoJSON(geojson) {
     } else if (liberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#3498db";
+     } else if (liberatedRus.includes(id)) {
+      f.properties.customName = "Освобождено";
+      f.properties.fillColor = "#07228F";
     } else {
       f.properties.customName = "Под Вопросом";
       f.properties.fillColor = "#777";
@@ -736,6 +745,7 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
+
 
 
 
