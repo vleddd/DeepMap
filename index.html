@@ -1010,13 +1010,6 @@ function changeMapStyle(style) {
       if (compareActive) {
         showComparison();
       }
-      
-      // Восстанавливаем элементы управления
-      map.addControl(new maplibregl.NavigationControl(), 'top-right');
-      map.addControl(new maplibregl.ScaleControl({
-        maxWidth: 100,
-        unit: 'metric'
-      }));
     });
   }
 }
@@ -1049,7 +1042,7 @@ document.getElementById('notifications-overlay').addEventListener('click', toggl
 document.getElementById('close-settings').addEventListener('click', toggleSettings);
 document.getElementById('settings-overlay').addEventListener('click', toggleSettings);
 
-// Обработчики выбора стиля карты
+// Обработчики выбора стиля карта
 document.querySelectorAll('.map-style-option').forEach(option => {
   option.addEventListener('click', () => {
     // Снимаем выделение со всех вариантов
@@ -1070,7 +1063,7 @@ document.querySelectorAll('.map-style-option').forEach(option => {
 
 map.on('load', async () => {
   await loadCurrentDate();
-  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  // Убрали добавление элементов управления навигацией
   map.addControl(new maplibregl.ScaleControl({
     maxWidth: 100,
     unit: 'metric'
