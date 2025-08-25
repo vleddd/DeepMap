@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="ru"><!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -310,8 +311,8 @@
 </div>
 
 <div id="left-controls">
-  <button id="info-btn" class="control-button" title="Информация">i</button>
   <button id="settings-btn" class="control-button" title="Настройки">⚙️</button>
+  <button id="info-btn" class="control-button" title="Информация">i</button>
   <button id="notifications-btn" class="control-button" title="Обновления">🔔</button>
   <button id="tg-channel-btn" class="control-button" title="Telegram-канал">📢</button>
 </div>
@@ -327,16 +328,16 @@
 <div id="settings-panel">
   <div id="settings-header">Настройки карты</div>
   <div id="settings-content">
-    <div class="map-style-option selected" data-style="basic">
-      <input type="radio" name="map-style" class="style-radio" checked>
+    <div class="map-style-option" data-style="basic">
+      <input type="radio" name="map-style" class="style-radio">
       <div class="style-info">
         <div class="style-name">Базовая карта</div>
         <div class="style-description">Стандартная карта с цветовым кодированием территорий</div>
       </div>
     </div>
     
-    <div class="map-style-option" data-style="topographic">
-      <input type="radio" name="map-style" class="style-radio">
+    <div class="map-style-option selected" data-style="topographic">
+      <input type="radio" name="map-style" class="style-radio" checked>
       <div class="style-info">
         <div class="style-name">Топографическая</div>
         <div class="style-description">Карта с отображением рельефа и высот</div>
@@ -357,10 +358,10 @@
 <div id="map"></div>
 
 <script>
-// Инициализация карты
+// Инициализация карты с топографическим стилем
 const map = new maplibregl.Map({
   container: 'map',
-  style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
+  style: 'https://api.maptiler.com/maps/topo-v2/style.json?key=A7YSMrQ3OZ0oStEWILkD',
   center: [31.1656, 48.3794],
   zoom: 6,
   touchZoomRotate: true,
@@ -370,7 +371,7 @@ const map = new maplibregl.Map({
 // Определение стилей карты
 const mapStyles = {
   basic: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
-  topographic: 'https://www.openstreetmap.org/?#map=10/48.0721/37.9454&layers=P',
+  topographic: 'https://api.maptiler.com/maps/topo-v2/style.json?key=A7YSMrQ3OZ0oStEWILkD',
   satellite: 'https://api.maptiler.com/maps/hybrid/style.json?key=A7YSMrQ3OZ0oStEWILkD'
 };
 
@@ -606,7 +607,7 @@ const updates = [
   },
   {
     date: "24 августа 2025",
-    time: "17:05",
+    time: "17-05",
     changes: [
       {
         text: "ВСУ Освободили ",
@@ -636,7 +637,7 @@ const updates = [
   },
   {
     date: "24 августа 2025",
-    time: "12:15",
+    time: "12-15",
     changes: [
       {
         text: "ВСУ Освободили ",
@@ -660,7 +661,7 @@ const updates = [
   },
   {
     date: "23 августа 2025",
-    time: "23:01",
+    time: "23-01",
     changes: [
       {
         text: "ВСУ продвинулись возле ",
@@ -694,7 +695,7 @@ let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
 let previousDateGeojson = null;
 let compareActive = false;
-let currentMapStyle = 'basic';
+let currentMapStyle = 'topographic';
 
 function formatArea(area) {
   return (area / 1e6).toFixed(2) + ' км²';
@@ -1070,6 +1071,7 @@ document.querySelectorAll('.map-style-option').forEach(option => {
 
 map.on('load', async () => {
   await loadCurrentDate();
+  // Добавляем элементы управления картой
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
   map.addControl(new maplibregl.ScaleControl({
     maxWidth: 100,
@@ -1086,8 +1088,3 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
-
-
-
-
-
