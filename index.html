@@ -185,6 +185,90 @@
       display: none;
     }
     
+    /* Стили для панели настроек */
+    #settings-panel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      border-radius: 15px;
+      z-index: 100;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      border: 2px solid #ddd;
+    }
+    
+    #settings-header {
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      border-bottom: 1px solid #eee;
+      background: #f8f8f8;
+      text-align: center;
+    }
+    
+    #settings-content {
+      padding: 20px;
+    }
+    
+    .map-style-option {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .map-style-option:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .map-style-option.selected {
+      background-color: #e3f2fd;
+      border-color: #1a73e8;
+    }
+    
+    .style-radio {
+      margin-right: 12px;
+    }
+    
+    .style-info {
+      flex-grow: 1;
+    }
+    
+    .style-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    
+    .style-description {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    #close-settings {
+      padding: 12px;
+      background: #f8f8f8;
+      border-top: 1px solid #eee;
+      text-align: center;
+      cursor: pointer;
+      color: #1a73e8;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    
+    #close-settings:hover {
+      background: #f0f0f0;
+    }
+    
     @media (max-width: 768px) {
       #date-container {
         top: auto;
@@ -204,7 +288,8 @@
         height: 40px;
       }
       
-      #notifications-panel {
+      #notifications-panel,
+      #settings-panel {
         width: 95%;
       }
       
@@ -225,6 +310,7 @@
 </div>
 
 <div id="left-controls">
+  <button id="settings-btn" class="control-button" title="Настройки">⚙️</button>
   <button id="info-btn" class="control-button" title="Информация">i</button>
   <button id="notifications-btn" class="control-button" title="Обновления">🔔</button>
   <button id="tg-channel-btn" class="control-button" title="Telegram-канал">📢</button>
@@ -235,6 +321,37 @@
   <div id="notifications-header">Обновление карты</div>
   <div id="notifications-content"></div>
   <div id="close-notifications">Закрыть</div>
+</div>
+
+<div class="overlay" id="settings-overlay"></div>
+<div id="settings-panel">
+  <div id="settings-header">Настройки карты</div>
+  <div id="settings-content">
+    <div class="map-style-option selected" data-style="basic">
+      <input type="radio" name="map-style" class="style-radio" checked>
+      <div class="style-info">
+        <div class="style-name">Базовая карта</div>
+        <div class="style-description">Стандартная карта с цветовым кодированием территорий</div>
+      </div>
+    </div>
+    
+    <div class="map-style-option" data-style="topographic">
+      <input type="radio" name="map-style" class="style-radio">
+      <div class="style-info">
+        <div class="style-name">Топографическая</div>
+        <div class="style-description">Карта с отображением рельефа и высот</div>
+      </div>
+    </div>
+    
+    <div class="map-style-option" data-style="satellite">
+      <input type="radio" name="map-style" class="style-radio">
+      <div class="style-info">
+        <div class="style-name">Спутниковая</div>
+        <div class="style-description">Спутниковые снимки местности</div>
+      </div>
+    </div>
+  </div>
+  <div id="close-settings">Закрыть</div>
 </div>
 
 <div id="map"></div>
@@ -249,6 +366,13 @@ const map = new maplibregl.Map({
   touchZoomRotate: true,
   interactive: true
 });
+
+// Определение стилей карты
+const mapStyles = {
+  basic: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
+  topographic: 'https://api.maptiler.com/maps/outdoor/style.json?key=A7YSMrQ3OZ0oStEWILkD',
+  satellite: 'https://api.maptiler.com/maps/hybrid/style.json?key=A7YSMrQ3OZ0oStEWILkD'
+};
 
 // Данные полигонов
 const idToName = {
@@ -570,6 +694,7 @@ let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
 let previousDateGeojson = null;
 let compareActive = false;
+let currentMapStyle = 'basic';
 
 function formatArea(area) {
   return (area / 1e6).toFixed(2) + ' км²';
@@ -859,6 +984,43 @@ function toggleNotifications() {
   }
 }
 
+function toggleSettings() {
+  const panel = document.getElementById('settings-panel');
+  const overlay = document.getElementById('settings-overlay');
+  
+  if (panel.style.display === 'flex') {
+    panel.style.display = 'none';
+    overlay.style.display = 'none';
+  } else {
+    panel.style.display = 'flex';
+    overlay.style.display = 'block';
+  }
+}
+
+function changeMapStyle(style) {
+  if (mapStyles[style] && currentMapStyle !== style) {
+    map.setStyle(mapStyles[style]);
+    currentMapStyle = style;
+    
+    // После смены стиля нужно заново добавить наши слои
+    map.once('styledata', () => {
+      if (currentGeojson) {
+        updateMapSource(currentGeojson);
+      }
+      if (compareActive) {
+        showComparison();
+      }
+      
+      // Восстанавливаем элементы управления
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+      map.addControl(new maplibregl.ScaleControl({
+        maxWidth: 100,
+        unit: 'metric'
+      }));
+    });
+  }
+}
+
 function openTgChannel() {
   window.open('https://t.me/Voenpole', '_blank');
 }
@@ -879,10 +1041,32 @@ document.getElementById('next-btn').addEventListener('click', async () => {
 });
 
 document.getElementById('compare-btn').addEventListener('click', toggleCompare);
+document.getElementById('settings-btn').addEventListener('click', toggleSettings);
 document.getElementById('notifications-btn').addEventListener('click', toggleNotifications);
 document.getElementById('tg-channel-btn').addEventListener('click', openTgChannel);
 document.getElementById('close-notifications').addEventListener('click', toggleNotifications);
 document.getElementById('notifications-overlay').addEventListener('click', toggleNotifications);
+document.getElementById('close-settings').addEventListener('click', toggleSettings);
+document.getElementById('settings-overlay').addEventListener('click', toggleSettings);
+
+// Обработчики выбора стиля карты
+document.querySelectorAll('.map-style-option').forEach(option => {
+  option.addEventListener('click', () => {
+    // Снимаем выделение со всех вариантов
+    document.querySelectorAll('.map-style-option').forEach(opt => {
+      opt.classList.remove('selected');
+      opt.querySelector('.style-radio').checked = false;
+    });
+    
+    // Выделяем выбранный вариант
+    option.classList.add('selected');
+    option.querySelector('.style-radio').checked = true;
+    
+    // Меняем стиль карты
+    const style = option.getAttribute('data-style');
+    changeMapStyle(style);
+  });
+});
 
 map.on('load', async () => {
   await loadCurrentDate();
@@ -902,13 +1086,3 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
