@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html lang="ru"><!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -328,16 +327,16 @@
 <div id="settings-panel">
   <div id="settings-header">Настройки карты</div>
   <div id="settings-content">
-    <div class="map-style-option" data-style="basic">
-      <input type="radio" name="map-style" class="style-radio">
+    <div class="map-style-option selected" data-style="basic">
+      <input type="radio" name="map-style" class="style-radio" checked>
       <div class="style-info">
         <div class="style-name">Базовая карта</div>
         <div class="style-description">Стандартная карта с цветовым кодированием территорий</div>
       </div>
     </div>
     
-    <div class="map-style-option selected" data-style="topographic">
-      <input type="radio" name="map-style" class="style-radio" checked>
+    <div class="map-style-option" data-style="topographic">
+      <input type="radio" name="map-style" class="style-radio">
       <div class="style-info">
         <div class="style-name">Топографическая</div>
         <div class="style-description">Карта с отображением рельефа и высот</div>
@@ -358,10 +357,10 @@
 <div id="map"></div>
 
 <script>
-// Инициализация карты с топографическим стилем
+// Инициализация карты с базовым стилем
 const map = new maplibregl.Map({
   container: 'map',
-  style: 'https://api.maptiler.com/maps/topo-v2/style.json?key=A7YSMrQ3OZ0oStEWILkD',
+  style: 'https://api.maptiler.com/maps/01966ded-9a2b-7a36-bad5-71bc7e8b2bf7/style.json?key=A7YSMrQ3OZ0oStEWILkD',
   center: [31.1656, 48.3794],
   zoom: 6,
   touchZoomRotate: true,
@@ -542,7 +541,7 @@ const availableDates = ["20.05.2025_23-10",
                         "19.07.2025_23-50",
                         "20.07.2025_22-58",
                         "21.07.2025_22-49",
-                        "22.07.2025_22-22",
+                        "22.07.202�_22-22",
                         "23.07.2025_23-11",
                         "24.07.2025_23-45",
                         "25.07.2025_23-37",
@@ -695,7 +694,9 @@ let currentIndex = availableDates.length - 1;
 let currentGeojson = null;
 let previousDateGeojson = null;
 let compareActive = false;
-let currentMapStyle = 'topographic';
+let currentMapStyle = 'basic';
+let navigationControl = null;
+let scaleControl = null;
 
 function formatArea(area) {
   return (area / 1e6).toFixed(2) + ' км²';
@@ -789,7 +790,7 @@ function updateMapSource(geojson) {
       const f = e.features[0];
       new maplibregl.Popup()
         .setLngLat(e.lngLat)
-        .setHTML(`<h3>${f.properties.customName}</h3><p>Площадь: ${f.properties.areaFormatted}</p>`)
+        .setHTML(`<h3>${f.properties.customName</h3><p>Площадь: ${f.properties.areaFormatted}</p>`)
         .addTo(map);
     });
   }
@@ -1000,6 +1001,14 @@ function toggleSettings() {
 
 function changeMapStyle(style) {
   if (mapStyles[style] && currentMapStyle !== style) {
+    // Удаляем старые элементы управления перед сменой стиля
+    if (navigationControl) {
+      map.removeControl(navigationControl);
+    }
+    if (scaleControl) {
+      map.removeControl(scaleControl);
+    }
+    
     map.setStyle(mapStyles[style]);
     currentMapStyle = style;
     
@@ -1012,12 +1021,15 @@ function changeMapStyle(style) {
         showComparison();
       }
       
-      // Восстанавливаем элементы управления
-      map.addControl(new maplibregl.NavigationControl(), 'top-right');
-      map.addControl(new maplibregl.ScaleControl({
+      // Добавляем элементы управления обратно
+      navigationControl = new maplibregl.NavigationControl();
+      scaleControl = new maplibregl.ScaleControl({
         maxWidth: 100,
         unit: 'metric'
-      }));
+      });
+      
+      map.addControl(navigationControl, 'top-right');
+      map.addControl(scaleControl);
     });
   }
 }
@@ -1072,11 +1084,14 @@ document.querySelectorAll('.map-style-option').forEach(option => {
 map.on('load', async () => {
   await loadCurrentDate();
   // Добавляем элементы управления картой
-  map.addControl(new maplibregl.NavigationControl(), 'top-right');
-  map.addControl(new maplibregl.ScaleControl({
+  navigationControl = new maplibregl.NavigationControl();
+  scaleControl = new maplibregl.ScaleControl({
     maxWidth: 100,
     unit: 'metric'
-  }));
+  });
+  
+  map.addControl(navigationControl, 'top-right');
+  map.addControl(scaleControl);
 });
 
 map.on('error', (e) => {
