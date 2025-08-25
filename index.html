@@ -739,10 +739,10 @@ function processGeoJSON(geojson) {
       f.properties.fillColor = "#b57edc";
     } else if (occupiedIds.includes(id)) {
       f.properties.customName = "Оккупировано";
-      f.properties.fillColor = "#ff3737";
+      f.properties.fillColor = "#d22b2b";
     } else if (newLiberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#10b981";
+      f.properties.fillColor = "#5BC779";
     } else if (liberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#3498db";
@@ -1086,6 +1086,7 @@ map.on('error', (e) => {
 </script>
 </body>
 </html>
+
 
 
 
