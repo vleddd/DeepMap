@@ -996,7 +996,7 @@ function processGeoJSON(geojson) {
     const id = f.id || f.properties.id;
     if (idToName[id]) {
       f.properties.customName = idToName[id];
-      f.properties.fillColor = "#b57edc";
+      f.properties.fillColor = "#E05594";
     } else if (occupiedIds.includes(id)) {
       f.properties.customName = "Оккупировано";
       f.properties.fillColor = "#d22b2b";
@@ -1005,7 +1005,7 @@ function processGeoJSON(geojson) {
       f.properties.fillColor = "#C293DB";
     } else if (liberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#3498db";
+      f.properties.fillColor = "#FFFD4D";
     } else if (liberatedRus.includes(id)) {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#1637CC";
