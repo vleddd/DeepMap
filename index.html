@@ -669,6 +669,7 @@ const availableDates = ["20.05.2025_23-10",
                         "28.06.2026_19-21",
                         "29.06.2026_19-21",
                         "01.07.2026_19-21",
+                        "03.07.2026_19-21",
                        ];
 
 const updates = [
@@ -996,16 +997,16 @@ function processGeoJSON(geojson) {
     const id = f.id || f.properties.id;
     if (idToName[id]) {
       f.properties.customName = idToName[id];
-      f.properties.fillColor = "#E05594";
+      f.properties.fillColor = "#b57edc";
     } else if (occupiedIds.includes(id)) {
       f.properties.customName = "Оккупировано";
       f.properties.fillColor = "#d22b2b";
     } else if (newLiberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#C293DB";
+      f.properties.fillColor = "#5BC779";
     } else if (liberatedIds.includes(id)) {
       f.properties.customName = "Освобождено";
-      f.properties.fillColor = "#FFFD4D";
+      f.properties.fillColor = "#3498db";
     } else if (liberatedRus.includes(id)) {
       f.properties.customName = "Освобождено";
       f.properties.fillColor = "#1637CC";
